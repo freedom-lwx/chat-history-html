@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.archive.lock
+.archive-stage-*/
+*.tmp
+.DS_Store
+
+# Local cross-session memory is not part of the public repository.
+/memory/*
+!/memory/context.example.md
+
+# Credentials and local environment configuration.
+.env
+.env.*
+!.env.example
+*.pem
+*.key

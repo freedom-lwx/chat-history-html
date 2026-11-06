@@ -1,0 +1,44 @@
+{
+  "slug": "cube-vector-matrix-compute",
+  "title": "Cube 与 Vector：矩阵计算、数据复用与乘加阵列",
+  "summary": "从内积与外积两种视角理解矩阵乘法，说明 Cube 的乘累加、数据复用与分块优势，以及 Vector 为什么适合逐元素运算。两个 16×16 矩阵相乘包含 16 对列／行向量，每对贡献 256 次乘加，共 4096 次乘加。",
+  "tags": ["NPU", "Cube", "Vector", "矩阵乘法", "数据复用"],
+  "status": "已沉淀",
+  "sections": [
+    {
+      "id": "overview",
+      "title": "1. 主题边界与核心结论",
+      "html": "<p>本页独立整理 Cube／Vector 与矩阵计算的讨论，不展开损失函数与反向传播推导。内容使用昇腾语境中的术语，但不针对具体芯片型号、算子内核或精度配置作保证。</p><blockquote><strong>Cube 的强项是密集矩阵乘累加与数据复用；Vector 的强项是灵活的批量逐元素运算。</strong>判断适合哪个单元，要看运算类型，不是只看数据是否为矩阵。</blockquote><p>以下逻辑阵列、固定 k 的外积和流水线图用于解释计算组织，不代表某款芯片的实际电路、阵列大小或时钟安排。</p>"
+    },
+    {
+      "id": "cube-vector",
+      "title": "2. 为什么矩阵加法通常用 Vector",
+      "html": "<p>矩阵加法的每个位置只计算 C<sub>ij</sub> = A<sub>ij</sub> + B<sub>ij</sub>。各位置相互独立，可以分批按向量指令处理：</p><pre>A:    [ a0       a1       a2       a3 ]\n        +        +        +        +\nB:    [ b0       b1       b2       b3 ]\n        ↓        ↓        ↓        ↓\nC:    [a0+b0    a1+b1    a2+b2    a3+b3]</pre><p>每对元素读进来、算一次、写回，通常主要受内存带宽限制。Cube 的强项则是<strong>矩阵乘累加 C ← AB + C</strong>：大量交叉配对与累加，让输入得到重复使用。融合的 AB+C 不意味着独立 A+B 也适合 Cube。</p><h3>在训练计算中的例子</h3><p>线性层 H = XW，令 G 为传入的输出梯度：</p><table><thead><tr><th>阶段</th><th>计算</th><th>运算本质</th><th>通常适合</th></tr></thead><tbody><tr><td>前向</td><td>H = XW</td><td>矩阵乘法</td><td>Cube</td></tr><tr><td>权重梯度</td><td>dW = XᵀG</td><td>矩阵乘法</td><td>Cube</td></tr><tr><td>输入梯度</td><td>dX = GWᵀ</td><td>矩阵乘法</td><td>Cube</td></tr><tr><td>SGD 更新</td><td>W ← W − ηdW</td><td>逐元素缩放和相减</td><td>Vector</td></tr><tr><td>AdamW 更新</td><td>更新梯度历史状态与权重</td><td>大量逐元素运算</td><td>Vector</td></tr></tbody></table><p>该表仅说明运算映射，不展开优化器的数学推导。实际执行路径与融合方式取决于芯片和软件实现。</p>"
+    },
+    {
+      "id": "inner-outer-product",
+      "title": "3. 一个 2×2 例子：内积视角与外积视角",
+      "html": "<p>给定下面两个矩阵：</p><pre>       A                 B\n   [ 1   2 ]         [ 5   6 ]\n   [ 3   4 ]         [ 7   8 ]</pre><h3>内积：一行 × 一列，把一个输出算完</h3><p>左上角输出是 [1, 2] 与 [5, 7] 的内积，即 1×5 + 2×7 = 19。</p><p>一般形式：<strong>C<sub>ij</sub> = Σ<sub>k</sub> A<sub>ik</sub>B<sub>kj</sub></strong>。</p><h3>外积：一列 × 一行，给所有输出贡献一部分</h3><table><thead><tr><th>累加位置</th><th>A 的列向量</th><th>B 的行向量</th><th>外积贡献</th></tr></thead><tbody><tr><td>k = 0</td><td>[1, 3]ᵀ</td><td>[5, 6]</td><td>第一行 [5, 6]<br>第二行 [15, 18]</td></tr><tr><td>k = 1</td><td>[2, 4]ᵀ</td><td>[7, 8]</td><td>第一行 [14, 16]<br>第二行 [28, 32]</td></tr></tbody></table><p>把两批贡献相加：</p><pre>[  5    6 ]     [ 14   16 ]     [ 19   22 ]\n[ 15   18 ]  +  [ 28   32 ]  =  [ 43   50 ]</pre><p>一般形式：<strong>C = Σ<sub>k</sub> A<sub>:,k</sub>B<sub>k,:</sub></strong>。</p><p>内积视角是<strong>盯着一个输出，把它算完</strong>；外积视角是<strong>共享一批输入，同时推进多个输出</strong>。两者数学上完全等价，只是遍历与组织方式不同。实际可以把乘积直接累加到输出状态中，不必先物化每个完整的外积矩阵。</p>"
+    },
+    {
+      "id": "sixteen-pairs",
+      "title": "4. 核心澄清：32 个数、256 次乘加和 16 对向量",
+      "html": "<p><strong>本节固定讨论 A、B 都是 16×16 的矩阵。</strong>先看一个 k，再看全部 16 个 k；不能把这两个层级混在一起。</p><h3>第一层：一个 k，对应一对向量</h3><ul><li>A 的第 k 列：一个列向量，包含 16 个标量。</li><li>B 的第 k 行：一个行向量，包含 16 个标量。</li><li>合计 32 个不同的 A／B 输入标量，不是 32 条向量。</li></ul><p>这两组元素<strong>全部交叉配对</strong>，不是只按相同下标配成 16 对：</p><pre>a0  → a0*b0,  a0*b1,  ... , a0*b15     16 pairs\na1  → a1*b0,  a1*b1,  ... , a1*b15     16 pairs\n...\na15 → a15*b0, a15*b1, ... , a15*b15    16 pairs\n\n                                16 × 16 = 256</pre><p>每对执行 C<sub>ij</sub> ← C<sub>ij</sub> + A<sub>ik</sub>B<sub>kj</sub>，因此一对向量贡献 256 次乘加。已有的 256 个输出累加值不包含在“32 个新输入标量”中。</p><h3>第二层：完整乘法包含 16 对向量</h3><table><thead><tr><th>k</th><th>向量对</th><th>贡献</th></tr></thead><tbody><tr><td>0</td><td>A 第 0 列 × B 第 0 行</td><td>256 次乘加</td></tr><tr><td>1</td><td>A 第 1 列 × B 第 1 行</td><td>256 次乘加</td></tr><tr><td>…</td><td>…</td><td>…</td></tr><tr><td>15</td><td>A 第 15 列 × B 第 15 行</td><td>256 次乘加</td></tr><tr><th>合计</th><th>16 对向量</th><th>4096 次乘加</th></tr></tbody></table><blockquote><strong>16 对向量 × 每对 256 次乘加 = 4096 次乘加。</strong><br>按每次乘加计 2 FLOPs，共 8192 FLOPs。所有贡献都累加到同一个 16×16 输出矩阵。</blockquote><h3>“32”与“256”不是单位换算</h3><p>输入数目是两组大小<strong>相加</strong>：16+16；配对数目是两组大小<strong>相乘</strong>：16×16。中间桥梁是<strong>每个 A 与所有 B 配对，每个输入被使用 16 次</strong>。</p><p>先前讨论中“32 个输入 → 256 次乘加”的表述只覆盖了一个 k，并省略了交叉配对以及全部 k 的累加。本节补齐这两环。</p>"
+    },
+    {
+      "id": "hardware-advantage",
+      "title": "5. Cube 的优势：不仅算得多，还要持续喂得饱",
+      "html": "<h3>优势一：阵列内部的数据复用</h3><p>在上述一个 k 的示意中，256 次乘加产生 512 次 A／B 操作数使用，但只涉及 32 个不同输入。通过广播、转发等内部数据通路，一个数可以供多个乘累加单元使用。</p><p><strong>这不等于显存访问一定减少 16 倍。</strong>真实流量取决于缓存、分块、布局和具体实现。这里展示的是不同输入数量与操作数使用次数之间的区别。</p><h3>优势二：局部保存累加状态</h3><p>每个逻辑输出位置保存自己的累加结果，后续乘积不断加入，不需要每次乘加都把中间结果写回显存。单元的核心动作可写为 s ← s + a×b。</p><h3>优势三：大量专用乘加硬件与块级组织</h3><p>Vector 也可以做乘加和矩阵乘法，并非没有数据复用。Cube 的价值在于把密集矩阵乘法需要的乘累加能力、数据通路和块级控制专门化，以通用性换取该类工作负载的效率。</p><h3>实际分块不只是“一列乘一行”</h3><p>对 C<sub>M×N</sub> = A<sub>M×K</sub>B<sub>K×N</sub>，工程上通常选择输出块，并沿 K 分批累加：</p><p><strong>C<sub>tile</sub> += A<sub>Mtile×Ktile</sub> B<sub>Ktile×Ntile</sub></strong></p><ul><li>M、N 方向分块：选择本次计算哪些输出。</li><li>K 方向分块：选择本次累加哪些贡献。</li><li>外积展开是理解视角，不是某款 Cube 唯一的执行方式。</li></ul><h3>优势四：数据搬运与计算重叠</h3><pre>time →\nload:     [ tile 0 ][ tile 1 ][ tile 2 ]\ncompute:           [ tile 0 ][ tile 1 ][ tile 2 ]</pre><p>这是理想流水线示意。通过缓冲，在计算当前块时准备下一块，减少等待；实际能否重叠及收益大小需要具体内核与测量验证。</p><p>矩阵太小、形状不匹配、数据供给不足、矩阵向量乘法缺少一个方向的复用时，Cube 可能无法充分利用。逐元素运算也不会自然获得这种交叉配对收益。</p><blockquote>Cube 不只是“计算器多”，而是“计算器多，而且能通过数据复用与流水线持续供数”。</blockquote>"
+    },
+    {
+      "id": "flops-boundaries",
+      "title": "6. 运算量口径与本页边界",
+      "html": "<h3>n³ 与 2n³ 并不矛盾</h3><p>经典的两个 n×n 矩阵相乘，每个输出需要 n 次乘法和 n−1 次加法，一共有 n² 个输出：</p><table><thead><tr><th>统计口径</th><th>数量</th></tr></thead><tbody><tr><td>乘法次数</td><td>n³</td></tr><tr><td>经典点积算法的乘法与加法次数</td><td>2n³ − n²</td></tr><tr><td>从零累加执行 n³ 次 MAC，每次计 2 FLOPs</td><td>2n³</td></tr><tr><td>经典算法的渐近复杂度</td><td>O(n³)</td></tr></tbody></table><p>因此 16×16 例子的 8192 FLOPs 使用 MAC 统计口径；若按经典点积算法计纯 AB 的乘法与加法，则为 7936 次算术操作。区别来自是否把第一次乘积与零的累加也计入，两种口径应说明清楚。</p><h3>边界与待验证项</h3><ul><li>本页依据当前可见讨论整理，没有引用或声称核实特定芯片官方资料。</li><li>逻辑阵列、固定 k 的外积和流水线图不代表真实阵列大小、布线、周期数或指令行为。</li><li>具体 Cube／Vector 的吞吐、支持精度、块大小、缓冲层级和优化器执行路径，需要结合芯片型号、软件栈及性能剖析确认。</li></ul>"
+    }
+  ],
+  "openQuestions": [
+    "若继续深入某款昇腾 NPU，需要先明确芯片型号与软件栈，再核实 Cube 块大小、数据通路、精度和片上存储约束。",
+    "具体算子的瓶颈属于算力、带宽还是调度，需要结合张量形状与性能测量判断。"
+  ],
+  "references": []
+}

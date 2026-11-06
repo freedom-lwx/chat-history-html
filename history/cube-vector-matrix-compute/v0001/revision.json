@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "publishedAt": "2026-11-05T08:24:40Z",
+  "note": "按用户要求将Cube、Vector和矩阵计算独立为硬件主题，保留完整示例与边界",
+  "sha256": "9adeacf2e2d59b9482e8fbd17dc8775f1d4fae878a4630a86a5c7a9e7e8d6b4b"
+}

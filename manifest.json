@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "topics": [
+    {
+      "slug": "npu-architecture-operator-development",
+      "title": "从 Cube / Vector 到 NPU 结构与算子开发",
+      "summary": "从 NPU 结构与数据流，走到四个算子的完整源码。保留原理图解，新增 Add 工程全貌、Host/Kernel/Tiling、共享库构建安装、独立 C++/Python 接入，以及融合、两阶段归约和 Cube MatMul 源码。教学基线为 Linux、dav-2201、CANN 9.0 起的新 ASC 模式；源码尚未在目标设备编译运行。",
+      "tags": [
+        "NPU结构",
+        "Ascend C",
+        "算子开发",
+        "数据流",
+        "Tiling",
+        "流水线"
+      ],
+      "status": "已沉淀",
+      "version": 2,
+      "createdAt": "2026-11-05T11:59:22Z",
+      "updatedAt": "2026-11-05T12:29:42Z",
+      "sha256": "e18ed939822b8521724e7c2f7db6471a9013ba5f960dc8036ac0d715ae91d965",
+      "history": [
+        {
+          "version": 1,
+          "publishedAt": "2026-11-05T11:59:22Z",
+          "note": "新建独立图文教程：NPU结构、存储与搬运、分块同步，以及Add到MatMul的算子开发路线；区分教学模型与历史官方样例",
+          "sha256": "0982105d52e9d27ce4d887970a7f12dbc3a69a2cff54900e917c8fa5b686433b"
+        },
+        {
+          "version": 2,
+          "publishedAt": "2026-11-05T12:29:42Z",
+          "note": "新增源码实战：18份完整工程文件、四个算子实现、Add全链路框架、共享库安装与独立C++/Python接入；CPU模型检查通过，SDK编译和NPU验证待完成",
+          "sha256": "e18ed939822b8521724e7c2f7db6471a9013ba5f960dc8036ac0d715ae91d965"
+        }
+      ]
+    },
+    {
+      "slug": "training-loss-backprop-cube",
+      "title": "Loss、反向传播与优化器：大模型怎样学习",
+      "summary": "从最大似然理解交叉熵，推导 softmax 与交叉熵组合后的 pᵢ−qᵢ 梯度，再通过链式法则说明每层权重如何获得梯度，以及优化器如何更新参数。本页只讨论训练数学；Cube 与 Vector 已独立归档。",
+      "tags": [
+        "大模型训练",
+        "交叉熵",
+        "反向传播",
+        "优化器"
+      ],
+      "status": "已沉淀",
+      "version": 2,
+      "createdAt": "2026-11-05T08:16:28Z",
+      "updatedAt": "2026-11-05T08:24:40Z",
+      "sha256": "7b2f2a4fa9dc9116f67b6b35e0448c86605cc3cca60b738e5e822cec982e35df",
+      "history": [
+        {
+          "version": 1,
+          "publishedAt": "2026-11-05T08:16:28Z",
+          "note": "整理交叉熵推导、逐层反传和优化器；用外积例子补齐16对向量各256次乘加的完整逻辑，并区分硬件示意与实际实现",
+          "sha256": "d91258842c3a32d0b5cc3f00f46d6285c9d961ec1b1290386a4400cba2a0150c"
+        },
+        {
+          "version": 2,
+          "publishedAt": "2026-11-05T08:24:40Z",
+          "note": "按用户要求拆分主题：本页仅保留Loss、反向传播与优化器，原合并版保留在历史中",
+          "sha256": "7b2f2a4fa9dc9116f67b6b35e0448c86605cc3cca60b738e5e822cec982e35df"
+        }
+      ]
+    },
+    {
+      "slug": "cube-vector-matrix-compute",
+      "title": "Cube 与 Vector：矩阵计算、数据复用与乘加阵列",
+      "summary": "从内积与外积两种视角理解矩阵乘法，说明 Cube 的乘累加、数据复用与分块优势，以及 Vector 为什么适合逐元素运算。两个 16×16 矩阵相乘包含 16 对列／行向量，每对贡献 256 次乘加，共 4096 次乘加。",
+      "tags": [
+        "NPU",
+        "Cube",
+        "Vector",
+        "矩阵乘法",
+        "数据复用"
+      ],
+      "status": "已沉淀",
+      "version": 1,
+      "createdAt": "2026-11-05T08:24:40Z",
+      "updatedAt": "2026-11-05T08:24:40Z",
+      "sha256": "9adeacf2e2d59b9482e8fbd17dc8775f1d4fae878a4630a86a5c7a9e7e8d6b4b",
+      "history": [
+        {
+          "version": 1,
+          "publishedAt": "2026-11-05T08:24:40Z",
+          "note": "按用户要求将Cube、Vector和矩阵计算独立为硬件主题，保留完整示例与边界",
+          "sha256": "9adeacf2e2d59b9482e8fbd17dc8775f1d4fae878a4630a86a5c7a9e7e8d6b4b"
+        }
+      ]
+    }
+  ]
+}

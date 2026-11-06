@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src &#x27;none&#x27;; style-src &#x27;unsafe-inline&#x27;; script-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;; object-src &#x27;none&#x27;">
+<meta name="referrer" content="no-referrer">
+<title>从 Cube / Vector 到 NPU 结构与算子开发 · 对话手记</title>
+<style>:root{color-scheme:light;--paper:#faf9f6;--card:#fff;--ink:#202b29;--muted:#65736e;--accent:#22614f;--line:#dce3dd;--soft:#eef4ee;font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);line-height:1.85}a{color:var(--accent);text-underline-offset:4px}a:hover{color:#103e30}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #9cbca8;outline-offset:4px}h1,h2,h3,h4{line-height:1.4;letter-spacing:-.02em}h1{font-size:clamp(2rem,4.5vw,3.8rem);margin:.4rem 0 1rem;font-weight:700}h2{font-size:1.45rem;margin:0 0 1rem}h3{font-size:1.15rem}p{margin:.8rem 0}button,input,select{font:inherit}button{cursor:pointer}.shell{max-width:1160px;margin:auto;padding:0 32px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:25px 0;border-bottom:1px solid var(--line)}.brand{font-weight:700;text-decoration:none;letter-spacing:.04em}.eyebrow{color:var(--accent);font-size:.78rem;letter-spacing:.15em;text-transform:uppercase;font-weight:700}.muted,.meta{color:var(--muted);font-size:.88rem}.hero{padding:64px 0 38px;max-width:840px}.hero p{font-size:1.06rem;color:var(--muted);max-width:720px}.stats{display:flex;gap:36px;margin:20px 0 32px}.stat strong{display:block;font-size:1.9rem;line-height:1.4;font-variant-numeric:tabular-nums}.stat span{font-size:.82rem;color:var(--muted)}.toolbar{display:flex;gap:12px;margin:20px 0 24px}input,select{border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);padding:11px 15px;min-width:0}input{flex:1}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px}.card{padding:26px;background:var(--card);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;gap:12px;transition:border-color .15s}.card:hover{border-color:#9ab5a8}.card h2{margin:0;font-size:1.25rem}.card h2 a{text-decoration:none}.card p{margin:0;color:var(--muted);font-size:.95rem}.card .meta{margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}.tags{display:flex;flex-wrap:wrap;gap:7px}.tag{display:inline-block;background:var(--soft);color:var(--accent);border-radius:5px;font-size:.76rem;padding:2px 9px}.status{background:#f1eee6;color:#736344}.empty{padding:55px 25px;text-align:center;border:1px dashed #b8c9bf;border-radius:12px;color:var(--muted)}.empty h2{color:var(--ink)}.empty code{font-size:.84rem}.footer{margin-top:64px;padding:24px 0 36px;border-top:1px solid var(--line);color:var(--muted);font-size:.8rem}.layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:44px;align-items:start}.toc{position:sticky;top:25px;font-size:.85rem;border-left:2px solid var(--line);padding-left:16px}.toc a{display:block;text-decoration:none;padding:5px 0;color:var(--muted)}.toc a:hover{color:var(--accent)}article{min-width:0}article section{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--line);scroll-margin-top:25px}article section:last-child{border:0}article p,article li{overflow-wrap:anywhere}article ul,article ol{padding-left:1.5rem}blockquote{border-left:3px solid #7a9d89;margin:20px 0;padding:8px 20px;background:var(--soft)}code,kbd{background:#edf0eb;border-radius:4px;padding:2px 5px;font-family:Consolas,"SFMono-Regular",monospace;font-size:.88em}pre{background:#202b29;color:#eef4ee;padding:20px;border-radius:8px;overflow:auto;font-size:.9rem;line-height:1.7}pre code{background:transparent;color:inherit;padding:0}table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:20px 0;font-size:.9rem}th,td{padding:11px 15px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:var(--soft);font-weight:600}details{border:1px solid var(--line);border-radius:8px;padding:12px 18px;margin:16px 0}summary{cursor:pointer;font-weight:600}.revision{padding:12px 16px;background:var(--soft);border-radius:8px;margin-bottom:30px;font-size:.88rem}.history{font-size:.88rem}.history li{padding:7px 0}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}[hidden]{display:none!important}.print{border:1px solid var(--line);background:white;border-radius:7px;color:var(--muted);padding:5px 12px}
+@media(max-width:720px){.shell{padding:0 20px}.hero{padding:38px 0 24px}.layout{display:block}.toc{position:static;margin-bottom:32px;display:flex;flex-wrap:wrap;gap:2px 16px}.toc .eyebrow{width:100%}.toolbar{flex-direction:column}.grid{grid-template-columns:1fr}.stats{gap:25px}.topbar .muted{font-size:.75rem}h1{font-size:2.1rem}}
+@media print{body{background:#fff;color:#000;font-size:11pt}.shell{max-width:none;padding:0}.topbar,.toc,.toolbar,.print,.footer,.history{display:none}.hero{padding:0 0 20px}.hero h1{font-size:25pt}.layout{display:block}article section{break-inside:auto}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}pre{white-space:pre-wrap;background:#f3f3f3;color:#000}a{color:inherit}.card{break-inside:avoid}.grid{display:block}.card{margin:12px 0}}
+/* NPU tutorial: diagrams use semantic tables, scoped to this topic only. */
+article section[id^="npu-"] caption{text-align:left;padding:0 0 12px;color:var(--accent);font-weight:700;line-height:1.6}
+article section[id^="npu-"] table{width:100%}
+@media(min-width:960px){article section[id^="npu-"] table{display:table}}
+@media(min-width:721px){body:has(#npu-roadmap) .toc{max-height:calc(100vh - 50px);overflow-y:auto;scrollbar-width:thin;padding-right:8px}}
+article section[id^="npu-"] mark{background:#fff0c6;color:#654c17;padding:1px 5px;border-radius:4px}
+#npu-map table:first-of-type,#npu-memory table:first-of-type,#npu-add-flow table:first-of-type,#npu-host-kernel table:first-of-type,#npu-fusion table:first-of-type{background:var(--card);border-radius:10px;box-shadow:0 3px 14px #203b2c08}
+#npu-map table:first-of-type th[colspan]{background:#22614f;color:white;text-align:center;letter-spacing:.02em}
+#npu-map table:first-of-type td[colspan]{background:#f7faf7}
+#npu-memory table:first-of-type th,#npu-memory table:first-of-type td,#npu-host-kernel table:first-of-type th,#npu-fusion table:first-of-type th{text-align:center}
+#npu-memory table:first-of-type td{line-height:2.1;min-width:220px}
+#npu-pipeline table:first-of-type td{text-align:center;white-space:nowrap}
+#npu-reduction table td,#npu-matmul table:first-of-type td{text-align:center}
+@media print{article section[id^="npu-"] caption{color:#000}#npu-map table:first-of-type th[colspan]{background:#eee;color:#000}}
+
+</style>
+</head>
+<body><div class="shell">
+<header class="topbar"><a class="brand" href="../index.html">对话手记 <span class="muted">/ Dialogue notes</span></a><span class="muted">本地保存 · 持续生长</span></header>
+<main><div class="hero"><div class="eyebrow">Discussion / 已沉淀</div>
+<h1>从 Cube / Vector 到 NPU 结构与算子开发</h1><p>从 NPU 结构与数据流，走到四个算子的完整源码。保留原理图解，新增 Add 工程全貌、Host/Kernel/Tiling、共享库构建安装、独立 C++/Python 接入，以及融合、两阶段归约和 Cube MatMul 源码。教学基线为 Linux、dav-2201、CANN 9.0 起的新 ASC 模式；源码尚未在目标设备编译运行。</p><div class="tags"><span class="tag">NPU结构</span><span class="tag">Ascend C</span><span class="tag">算子开发</span><span class="tag">数据流</span><span class="tag">Tiling</span><span class="tag">流水线</span><span class="tag status">v2</span></div>
+<p class="meta">更新于 2026-11-05 12:29:42 UTC</p></div>
+<div class="revision">本次更新：新增源码实战：18份完整工程文件、四个算子实现、Add全链路框架、共享库安装与独立C++/Python接入；CPU模型检查通过，SDK编译和NPU验证待完成</div><div class="layout"><nav class="toc" aria-label="章节目录"><span class="eyebrow">Contents</span><a href="#npu-roadmap">1. 阅读路线：从会算，到安排它高效地算</a><a href="#npu-map">2. 从整机到计算单元：先把结构分清</a><a href="#npu-memory">3. 为什么需要多级存储：算得快，不代表喂得饱</a><a href="#npu-layout">4. 数学里的行列，不等于内存里的连续片段</a><a href="#npu-add-flow">5. 第一个算子：跟着一个 Add 数据块走一遍</a><a href="#npu-tiling">6. 两级切分：先分给核任务，再分成片上小块</a><a href="#npu-pipeline">7. 双缓冲与同步：让搬运和计算重叠，但不能抢跑</a><a href="#npu-host-kernel">8. 写算子时，Host 与 Kernel 分别负责什么</a><a href="#npu-fusion">9. 第二个算子：Add + ReLU，先体会少搬一次的收益</a><a href="#npu-reduction">10. 第三个算子：ReduceSum，第一次遇到汇合</a><a href="#npu-matmul">11. 第四个算子：MatMul，把块送进 Cube</a><a href="#npu-performance">12. 怎样判断瓶颈：算力、带宽，还是等待</a><a href="#npu-validation">13. 从能运行到可信：正确性与性能检查单</a><a href="#npu-next-steps">14. 实践路线与资料边界</a><a href="#npu-source-map">15. 源码实战入口：完整目录、职责与交付物</a><a href="#npu-source-build">16. 构建与安装：源码怎样变成可交付的库</a><a href="#npu-source-add">17. Case 1 · Add：把单算子的完整骨架逐层拆开</a><a href="#npu-source-fused">18. Case 2 · Add+ReLU：共享骨架，完整实现融合</a><a href="#npu-source-reduce">19. Case 3 · ReduceSum：完整两阶段源码与工作区</a><a href="#npu-source-matmul">20. Case 4 · MatMul：完整 Cube 路径，而非调用伪函数</a><a href="#npu-source-consumer">21. 其他工程怎样真正用起来：C++ 与 Python 完整消费端</a><a href="#npu-source-tests">22. 验证状态、全部测试源码与工程说明</a><a href="#open-questions">待验证与后续问题</a><a href="#references">参考来源</a><a href="#revision-history">修订记录</a></nav><article><section id="npu-roadmap"><h2>1. 阅读路线：从会算，到安排它高效地算</h2><blockquote><strong>算子开发的核心，不只是写出数学公式，而是安排：谁来算、数据放哪里、每次算多少、何时可以读取或复用缓冲。</strong></blockquote><table><caption>学习路线｜四个问题，逐层深入</caption><thead><tr><th>① 计算</th><th>② 结构</th><th>③ 数据流</th><th>④ 开发</th></tr></thead><tbody><tr><td>Cube / Vector<br>适合什么运算？</td><td>存储、搬运、控制<br>如何支撑计算？</td><td>分块、流水、同步<br>如何减少等待？</td><td>Host / Kernel<br>如何实现与验证？</td></tr></tbody></table><p>前置认识：Cube 擅长密集矩阵乘累加；Vector 擅长逐元素及适合向量化的运算。本文从这个基础向 NPU 结构与算子开发延伸，与 Loss／反向传播主题分开，也不重复前篇全部矩阵乘法推导。</p><h3>本页三种信息，请区别阅读</h3><ul><li><strong>通用原理：</strong>计算与数据搬运的关系、链路依赖、分块和数据复用。</li><li><strong>官方示例中已核实：</strong>Ascend 样例里的 CopyIn / Compute / CopyOut、队列、Host tiling，以及矩阵布局转换。来源列于页尾。</li><li><strong>教学假设：</strong>四个核任务、128 元素一块、64×64 矩阵块等，是用于算清过程的示意值，不是硬件参数或最优配置。</li></ul><p><strong>尚未指定 NPU 型号与 CANN 版本。</strong>因此本文是可离线阅读的原理与开发入门教程，不是已在目标硬件编译、测试过的工程。前 14 章保留原理说明与伪代码；<a href="#npu-source-map" rel="noreferrer noopener">第 15 章起提供完整源码与跨工程接入</a>，并附本地源码包。新增代码选择 Linux、Atlas A2/A3（dav-2201）、CANN ≥ 9.0.0 的新 ASC 构建方式作为教学基线，不代表用户实际环境，也不代表已通过设备验证。</p></section><section id="npu-map"><h2>2. 从整机到计算单元：先把结构分清</h2><table><caption>图 1｜Host → Device → 执行资源：逻辑层次图</caption><tbody><tr><th colspan="3">Host · 主机 CPU 与运行时</th></tr><tr><td colspan="3">检查输入、准备参数与内存、选择切分方案、提交任务。Host 的角色是组织执行，不是逐个计算全部张量元素。</td></tr><tr><th colspan="3">↓ 提交命令与参数　／　必要时进行 Host–Device 数据传输</th></tr><tr><th colspan="3">Device · NPU</th></tr><tr><td colspan="3"><strong>全局内存 GM：</strong>保存张量与工作区；对典型设备而言由 HBM／DDR 等设备内存提供。具体物理实现随产品变化。</td></tr><tr><th colspan="3">↕ 片上互连、缓存与数据搬运路径</th></tr><tr><th>执行资源／任务 0</th><th>执行资源／任务 1</th><th>更多执行资源</th></tr><tr><td>局部存储<br>搬运与同步<br>计算单元</td><td>局部存储<br>搬运与同步<br>计算单元</td><td>按任务划分协作<br>共享有限的外部带宽</td></tr></tbody></table><p><strong>图中不是“一张 NPU 只有一个 Cube 和一个 Vector”。</strong>NPU 往往具有多个执行资源。不同代际可能采用不同的 Cube／Vector 组织方式，包括组合或分离的设计；不能默认每个物理核都包含同样的单元，也不能把逻辑工作块数机械等同于物理核心数。</p><table><thead><tr><th>角色</th><th>主要职责</th><th>直观问题</th></tr></thead><tbody><tr><td>Cube</td><td>密集矩阵乘累加</td><td>如何提供足够多、可复用的矩阵数据？</td></tr><tr><td>Vector</td><td>逐元素计算及支持的向量／归约操作</td><td>怎样让一批数据连续、高效地进入计算？</td></tr><tr><td>Scalar / 控制</td><td>地址、循环、分支和指令组织</td><td>当前算哪块、循环几次、指向哪里？</td></tr><tr><td>搬运引擎，例如 MTE</td><td>按支持的路径移动数据</td><td>数据是否已经到位、结果是否已写出？</td></tr><tr><td>缓冲与累加存储</td><td>保存输入块、中间值与部分结果</td><td>容量够不够、何时能安全复用？</td></tr></tbody></table><p>这些是理解算子的主要角色，而不是完整芯片部件清单。并非任意存储之间都可以直接传输；执行通路受到硬件和指令约束。</p></section><section id="npu-memory"><h2>3. 为什么需要多级存储：算得快，不代表喂得饱</h2><p>若每做一次乘加都从全局内存重新取两个数、再写回部分和，计算单元容易被数据搬运拖住。片上存储让输入得以复用，也让中间结果不必反复离开计算侧。</p><table><caption>图 2｜两类逻辑数据路径，不是一条所有操作共用的流水线</caption><thead><tr><th>Vector 路径</th><th>Cube 路径</th></tr></thead><tbody><tr><td><strong>GM 中的张量</strong><br>↓ 搬入<br><strong>UB 等向量局部缓冲</strong><br>↔ Vector 计算<br><strong>局部结果</strong><br>↓ 搬出<br><strong>GM 中的输出</strong></td><td><strong>GM 中的矩阵块</strong><br>↓ 搬入／布局准备<br><strong>矩阵输入暂存与操作数缓冲</strong><br>↓<br><strong>Cube 乘累加</strong><br>↓<br><strong>局部累加结果 → 输出路径 → GM</strong></td></tr></tbody></table><h3>阅读昇腾资料时，常见名称怎么理解？</h3><table><thead><tr><th>名称</th><th>可先建立的理解</th><th>不要误解为</th></tr></thead><tbody><tr><td>GM</td><td>设备全局地址空间中的张量存储</td><td>每个核私有的一小块内存</td></tr><tr><td>L2</td><td>某些架构中的片上缓存层级</td><td>开发者总能任意分配的临时数组</td></tr><tr><td>UB / Unified Buffer</td><td>与 Vector 数据处理相关的局部缓冲</td><td>必然向所有计算核统一共享</td></tr><tr><td>L1、L0A / L0B</td><td>常见架构中用于矩阵数据暂存与供数的层级</td><td>必须与 CPU 缓存具有相同管理机制</td></tr><tr><td>L0C 等累加存储</td><td>保存矩阵乘的部分和／结果</td><td>每次乘加都要回到 GM 的普通输出数组</td></tr></tbody></table><p>名称仅用于对照常见术语。<strong>不同芯片的容量、物理归属、可访问关系与输出通路不完全相同。</strong>某条具体路径能否直接走通，需要核对型号文档；本文不把所有架构画成固定的 GM → L1 → L0 → UB 链。</p><blockquote>片上缓冲像工作台：小，但靠近计算。算子优化要决定每次放什么、用几次、什么时候换下一批。</blockquote></section><section id="npu-layout"><h2>4. 数学里的行列，不等于内存里的连续片段</h2><p>前篇用“左矩阵取列、右矩阵取行”的外积视角解释复用。但这<strong>不意味着每次都从 GM 零散地读取一条列向量</strong>。</p><table><caption>图 3｜同一个矩阵：二维数学视图与一维物理排列</caption><tbody><tr><th>二维矩阵 A</th><td><code>[1  2  3  4]</code><br><code>[5  6  7  8]</code></td></tr><tr><th>假设按行连续存放</th><td><code>1 → 2 → 3 → 4 → 5 → 6 → 7 → 8</code></td></tr><tr><th>取第二列</th><td>取出 2 与 6：相邻行之间跨越 4 个元素，并不连续。</td></tr></tbody></table><p>实际可能先搬入较大的连续块，再通过支持的搬运、转置或布局转换形成计算需要的块。部分格式转换可以与搬运结合，具体取决于能力与 API。</p><p>官方历史 MatMul 样例中就能看到 ND → NZ 等布局准备、后续 LoadData 与 Mmad 的组合。但样例针对特定旧版环境，不能把其中的格式与调用签名当作所有新硬件的要求。</p><blockquote><strong>数学切分回答“哪些数参与运算”；物理布局回答“这些数放在哪里、怎样高效取到”。</strong>两者需要配合，但不是同一个问题。</blockquote></section><section id="npu-add-flow"><h2>5. 第一个算子：跟着一个 Add 数据块走一遍</h2><p>任务：<strong>C[i] = A[i] + B[i]</strong>。先假设输入形状一致、连续存储、无广播，并且结果写入独立输出。选 Add 是为了先看清数据流，不被复杂数学分散注意力。</p><table><caption>图 4｜一次数据块处理：搬入 → 计算 → 搬出</caption><tbody><tr><th>① 输入在 GM</th><td>A 的当前片段、B 的当前片段；结果区域 C 已分配。</td></tr><tr><th>↓ CopyIn</th><td>将有效输入搬入本任务的局部缓冲；等待数据可供计算使用。</td></tr><tr><th>② 局部计算</th><td>Vector 执行逐元素加法：<code>c_local = a_local + b_local</code>。</td></tr><tr><th>↓ CopyOut</th><td>在结果已就绪后，把有效输出写回 GM。</td></tr><tr><th>③ 释放／复用</th><td>相关读写完成后，缓冲槽位可交给后续块。</td></tr></tbody></table><p>一个基本 Kernel 的主体因此可以拆为三个职责：<strong>CopyIn、Compute、CopyOut</strong>。这也与已查阅的官方 Add 示例的组织方式一致。</p><h3>缓冲容量也能算清</h3><p>教学设定：每块 128 个 FP16 元素，每元素 2 字节。如果输入 A、B 和输出 C 各有一个独立缓冲：</p><p><strong>单套数据缓冲 = 3 × 128 × 2 = 768 字节。</strong></p><p>若三者都各准备两份槽位，则纯数据载荷为 1536 字节。实际分配还要考虑对齐、临时空间和运行时限制；这不是任何芯片的 UB 容量声明。</p><p><a href="#npu-source-add" rel="noreferrer noopener">查看 Add 的完整源码、Tiling、Host 包装和调用链</a>。源码实例为了易测试使用 FP32、256 元素块，与本节 FP16 容量示意的参数不同。</p></section><section id="npu-tiling"><h2>6. 两级切分：先分给核任务，再分成片上小块</h2><p>教学例子：总共 <strong>1000 个元素</strong>，安排 <strong>4 个逻辑核任务</strong>，每个完整任务负责 256 个元素，每次处理 128 个元素。</p><table><caption>图 5｜任务划分与尾块：使用左闭右开区间</caption><thead><tr><th>任务</th><th>负责范围</th><th>第 1 块</th><th>第 2 块</th></tr></thead><tbody><tr><th>0</th><td>[0, 256)</td><td>128 个</td><td>128 个</td></tr><tr><th>1</th><td>[256, 512)</td><td>128 个</td><td>128 个</td></tr><tr><th>2</th><td>[512, 768)</td><td>128 个</td><td>128 个</td></tr><tr><th>3</th><td>[768, 1000)</td><td>128 个</td><td><mark>104 个有效元素</mark></td></tr></tbody></table><p>先给任务分配互不重叠的输出范围，再让每个任务在自己的范围内循环。这避免了 Add 的跨任务合并。任务数由运行时映射到实际执行资源，不表示这张芯片只有四个物理核。</p><h3>与硬件 API 无关的同步伪代码</h3><pre><code># 教学伪代码：下面的读写操作视为完成后才返回
+# c 为当前任务编号，不是实际 Ascend C API
+base = c * 256
+end  = min(base + 256, N)
+
+for offset in range(base, end, 128):
+    valid = min(128, end - offset)
+    a_local = read_valid(A, offset, valid)
+    b_local = read_valid(B, offset, valid)
+    c_local = vector_add(a_local, b_local, valid)
+    write_valid(C, offset, c_local, valid)</code></pre><p>数学切分允许这样写；落到真实 API，还需要满足地址、长度、步长与计算指令的约束。</p><h3>尾块为什么是正确性的重点？</h3><ul><li>最后一块只有 104 个有效元素，不能盲目从 GM 读取 128 个，或向输出写出 128 个。</li><li>如本地计算需要补齐，可使用目标环境支持的安全搬运、填充和掩码方案；<strong>局部补齐不代表允许全局越界读写</strong>。</li><li>还要避免多个任务的实际写回范围因对齐处理而重叠。</li><li>128、256 在这里是教学参数，不是通用最优值；真实 Tiling 应根据输入、硬件容量与测量调整。</li></ul></section><section id="npu-pipeline"><h2>7. 双缓冲与同步：让搬运和计算重叠，但不能抢跑</h2><p>如果一个块的输入搬运、计算、输出搬运全都串行，计算单元在搬运期间可能空闲。独立执行引擎与合理缓冲让不同块的阶段有机会重叠。</p><table><caption>图 6｜理想三阶段流水线：四个块，三阶段等时长</caption><thead><tr><th>阶段／时段</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody><tr><th>输入搬运</th><td><mark>T0</mark></td><td><mark>T1</mark></td><td><mark>T2</mark></td><td><mark>T3</mark></td><td>—</td><td>—</td></tr><tr><th>计算</th><td>—</td><td><strong>T0</strong></td><td><strong>T1</strong></td><td><strong>T2</strong></td><td><strong>T3</strong></td><td>—</td></tr><tr><th>输出搬运</th><td>—</td><td>—</td><td>T0</td><td>T1</td><td>T2</td><td>T3</td></tr></tbody></table><p>若每阶段耗时 t，串行四块需要 12t；上述理想流水线需要 6t。推广到 r 块，理想值为 (r+2)t，而不是 3rt。<strong>这只是展示重叠收益，不是实测加速比。</strong>真实输入／输出可能竞争同一带宽，阶段耗时也可能不相等。</p><h3>双缓冲提供的是“下一块有地方放”</h3><table><caption>图 7｜输入缓冲交替使用的逻辑示意</caption><thead><tr><th>时段</th><th>槽位 A</th><th>槽位 B</th></tr></thead><tbody><tr><td>准备</td><td>装入 T0</td><td>空闲</td></tr><tr><td>重叠 1</td><td>计算读取 T0</td><td>装入 T1</td></tr><tr><td>重叠 2</td><td>安全释放后装入 T2</td><td>计算读取 T1</td></tr></tbody></table><p>输出可以有自己的槽位与生命周期。双缓冲并不自动带来重叠，仍需引擎支持、正确调度和同步依赖。</p><h3>同步要保护两类依赖</h3><ul><li><strong>数据就绪：</strong>搬入完成才能计算，计算完成才能读取结果并写回。</li><li><strong>空间可复用：</strong>旧数据的读者尚未完成时，不能覆盖该槽位；输出尚未读走时，不能把槽位当作空闲。</li></ul><p>已查阅样例里的 TPipe、TQue、EnQue / DeQue 等用于组织缓冲与依赖。它们的具体语义要查对应版本；不能把源代码中调用先后简单等同于所有异步硬件操作均已完成。</p><blockquote>双缓冲解决“能否同时放两批数据”，同步解决“这批数据是否真的能读、这块空间是否真的能覆盖”。</blockquote></section><section id="npu-host-kernel"><h2>8. 写算子时，Host 与 Kernel 分别负责什么</h2><table><caption>图 8｜开发职责：计划传给执行端</caption><thead><tr><th>Host 侧：制定方案</th><th>传递的内容</th><th>Kernel 侧：执行方案</th></tr></thead><tbody><tr><td>检查形状、类型与支持条件<br>决定任务划分和块大小<br>准备输出与必要工作区<br>配置启动</td><td>张量地址<br>有效元素数<br>块大小与任务参数<br>必要的工作区信息<br><strong>→</strong></td><td>定位本任务区间<br>初始化本地资源<br>分块搬入、计算、搬出<br>处理尾块与同步</td></tr></tbody></table><p>这是逻辑职责，不要求所有工程具有完全相同的文件结构。直接 Kernel 调用与框架自定义算子集成，入口、注册和调用链可能不同。</p><h3>认识常见代码概念，不急于背接口签名</h3><table><thead><tr><th>概念／名称</th><th>与前面图示的关系</th></tr></thead><tbody><tr><td>GlobalTensor</td><td>表示对 GM 张量区域的访问视图，不等于每次声明都分配完整张量。</td></tr><tr><td>LocalTensor</td><td>访问当前使用的片上局部数据。</td></tr><tr><td>TPipe / TQue</td><td>组织局部缓冲及阶段依赖；队列深度与内存消耗相关。</td></tr><tr><td>DataCopy</td><td>表达受支持的数据搬运；合法长度、方向、布局与尾块处理需查版本。</td></tr><tr><td>Add 等计算接口</td><td>让支持的执行单元处理本地数据。</td></tr><tr><td>Tiling 数据</td><td>把输入相关的切分方案传给执行侧。</td></tr></tbody></table><p>官方仓库的 Host 示例可见形状／数据类型推导、SetBlockDim 与 Tiling 数据序列化；Add Kernel 示例可见队列与三阶段组织。<strong>样例使用旧版命名，且 README 明确提示它是演示代码，不提供完整防御性处理。</strong>本节保留历史样例背景；后面的源码实战改用明确的 CANN 9.x 教学基线，提供全套文件，但当前机器没有 SDK/NPU，未进行目标编译或上机测试。</p></section><section id="npu-fusion"><h2>9. 第二个算子：Add + ReLU，先体会少搬一次的收益</h2><p>目标：<strong>C[i] = max(A[i] + B[i], 0)</strong>。如果先执行 Add，把中间张量 S 写到 GM，再执行 ReLU，就多了一次中间结果的写入与读出。</p><table><caption>图 9｜两个独立算子与融合算子的数据旅程</caption><thead><tr><th>独立执行</th><th>融合执行</th></tr></thead><tbody><tr><td>A、B 从 GM 搬入<br>↓ Add<br><mark>S 写到 GM</mark><br><mark>S 从 GM 再读入</mark><br>↓ ReLU<br>C 写回 GM</td><td>A、B 从 GM 搬入<br>↓ Add<br><strong>S 留在局部缓冲</strong><br>↓ ReLU<br>C 写回 GM</td></tr></tbody></table><h3>一个明确的流量账本</h3><p>假设 FP16、N 个元素，每个元素 2 字节；忽略缓存命中、额外临时量与重复访问，以算子边界的张量读写估算：</p><table><thead><tr><th>方案</th><th>张量读写</th><th>流量</th></tr></thead><tbody><tr><td>单独 Add</td><td>读 A、读 B、写 S</td><td>6N 字节</td></tr><tr><td>单独 ReLU</td><td>读 S、写 C</td><td>4N 字节</td></tr><tr><td>两者分开</td><td>上面两项相加</td><td>10N 字节</td></tr><tr><td>融合</td><td>读 A、读 B、写 C</td><td>6N 字节</td></tr></tbody></table><p>模型中的流量减少 40%，但<strong>不等于延迟必然减少 40%</strong>；启动开销、缓存、片上资源占用和实际带宽都会影响结果。若 S 还有其他必须使用它的消费者，就不能无条件省掉它的物化。</p><p>先让这两个操作在同一块局部数据上连续执行，才会真正理解：算子优化有时主要是<strong>少搬数据</strong>，不是增加算术吞吐。</p><p><a href="#npu-source-fused" rel="noreferrer noopener">查看 Add+ReLU 源码及其与 Add 共用的实现</a>。</p></section><section id="npu-reduction"><h2>10. 第三个算子：ReduceSum，第一次遇到汇合</h2><p>Add 中每个输出独立，ReduceSum 则把多个输入汇总成一个结果。以 1 到 8 求和为例：</p><table><caption>图 10｜树形求和的数学示意，不代表固定指令实现</caption><tbody><tr><th>输入</th><td>1，2</td><td>3，4</td><td>5，6</td><td>7，8</td></tr><tr><th>局部相加</th><td>3</td><td>7</td><td>11</td><td>15</td></tr><tr><th>继续汇合</th><td colspan="2">10</td><td colspan="2">26</td></tr><tr><th>最终结果</th><td colspan="4"><strong>36</strong></td></tr></tbody></table><p>当输入跨多个任务时，初学者可采用清晰的两阶段方案：</p><ol><li>每个任务处理自己的数据，先求一个局部和，写到独立的工作区位置。</li><li>第一阶段完成后，第二个 Kernel 汇总这些局部和。</li></ol><p>不要默认同一个 Kernel 内存在可任意使用的全设备屏障，也不要直接让多个任务用普通写操作覆盖同一个输出。原子操作、跨核协作等方案需要明确的支持与语义，不是入门时的默认捷径。</p><p>归约还引入<strong>数值顺序</strong>问题：浮点加法不严格满足结合律，树形、分块与串行累加的结果可能有细微差异。测试应依据类型、累加精度与规模设定误差标准。</p><p><a href="#npu-source-reduce" rel="noreferrer noopener">查看两个 ReduceSum Kernel、工作区与同 stream 启动的完整实现</a>。</p></section><section id="npu-matmul"><h2>11. 第四个算子：MatMul，把块送进 Cube</h2><p>目标：C<sub>M×N</sub> = A<sub>M×K</sub>B<sub>K×N</sub>。教学设定 M = N = 128、K = 256，选择输出块 64×64，每批累加的 K 长度为 64。这些是软件分块参数，<strong>不是声明 Cube 的原生阵列就是 64×64</strong>。</p><table><caption>图 11｜先沿 M、N 分输出，再沿 K 累加</caption><tbody><tr><th colspan="3">输出 C：128 × 128</th></tr><tr><th></th><th>列 [0, 64)</th><th>列 [64, 128)</th></tr><tr><th>行 [0, 64)</th><td><strong>C00</strong><br>任务 0 负责</td><td><strong>C01</strong><br>任务 1 负责</td></tr><tr><th>行 [64, 128)</th><td><strong>C10</strong><br>任务 2 负责</td><td><strong>C11</strong><br>任务 3 负责</td></tr></tbody></table><p>每个任务负责独立的输出块。以 C00 为例：</p><table><thead><tr><th>批次</th><th>A 输入块</th><th>B 输入块</th><th>结果</th></tr></thead><tbody><tr><td>k₀ = 0</td><td>行 [0,64)<br>列 [0,64)</td><td>行 [0,64)<br>列 [0,64)</td><td>累加到 C00</td></tr><tr><td>k₀ = 64</td><td>行 [0,64)<br>列 [64,128)</td><td>行 [64,128)<br>列 [0,64)</td><td>继续累加</td></tr><tr><td>k₀ = 128</td><td>行 [0,64)<br>列 [128,192)</td><td>行 [128,192)<br>列 [0,64)</td><td>继续累加</td></tr><tr><td>k₀ = 192</td><td>行 [0,64)<br>列 [192,256)</td><td>行 [192,256)<br>列 [0,64)</td><td>完成 C00</td></tr></tbody></table><pre><code># 教学伪代码：每个任务独占一个输出块
+C_acc = zeros(64, 64)
+
+for k0 in [0, 64, 128, 192]:
+    A_tile = load_and_prepare(A, output_rows, k0)
+    B_tile = load_and_prepare(B, k0, output_cols)
+    C_acc += matrix_multiply(A_tile, B_tile)
+
+store_result(C, output_rows, output_cols, C_acc)</code></pre><p>第一批开始时累加器必须正确初始化；后续批次要累加而不是覆盖。等该输出块的全部 K 贡献完成后再写回，是这里采用的组织方式。</p><h3>与“16 对向量，各 256 次乘加”如何衔接？</h3><p>一个 64×64×64 的块乘法，可以在数学上展开为 64 对列／行向量，每对贡献 64×64 次乘加。合计 262144 次 MAC，即 524288 FLOPs。完整例子有 4 个输出块、每块 4 批 K，合计 8388608 FLOPs，与 2MNK 一致。</p><h3>片上容量约束会出现在哪里？</h3><p>若假设输入 FP16、累加 FP32，一个 A 块 8 KiB，一个 B 块 8 KiB，一个 C 累加块 16 KiB。这只是三份逻辑数据的载荷；真实实现可能还需多级暂存、布局转换副本和双缓冲。<strong>不能把三者相加后只与 UB 容量比较</strong>，因为它们可能位于不同的存储层级。</p><p>入门时先使用目标版本提供的矩阵乘高层能力，理解形状、布局和 Tiling；再深入底层指令。不要把从头手写峰值性能 MatMul 当作第一个算子练习。</p><p><a href="#npu-source-matmul" rel="noreferrer noopener">查看有明确形状限制的 Cube MatMul 源码</a>：为了展示底层路径，源码采用 16×16 输出块和保守同步；这不是本节 64×64 理想分块参数的性能实现。</p></section><section id="npu-performance"><h2>12. 怎样判断瓶颈：算力、带宽，还是等待</h2><p>定义算术强度 AI 为：<strong>浮点运算数 ÷ 选定存储边界的搬运字节数</strong>。必须说明统计边界；GM、缓存与局部缓冲的流量不能混为一谈。</p><table><thead><tr><th>例子与假设</th><th>计算量</th><th>简化 GM 流量</th><th>AI</th></tr></thead><tbody><tr><td>FP16 Add<br>N 个元素，各输入读一次、输出写一次</td><td>N FLOPs</td><td>6N 字节</td><td>1/6 FLOP/Byte</td></tr><tr><td>FP16 方阵乘法<br>输入、最终输出均 FP16，理想各读／写一次</td><td>约 2n³ FLOPs</td><td>6n² 字节</td><td>约 n/3 FLOP/Byte</td></tr></tbody></table><p>矩阵乘的第二行是理想化流量模型，实际分块可能重复读取输入，输出类型也可能不同。它解释的是：<strong>规模与复用提高时，矩阵乘更有机会用计算而不是搬运主导时间。</strong></p><p>粗略下界可写成：T ≥ max(计算量 / 有效计算吞吐，搬运量 / 有效带宽)。当两类工作能够充分重叠时，这个 max 模型更有参考意义；实际还可能受启动、同步、布局转换和调度影响。</p><table><thead><tr><th>观察到的现象</th><th>优先检查</th></tr></thead><tbody><tr><td>大量时间在搬运，计算单元空闲</td><td>访问连续性、重复读写、融合机会、是否受带宽限制。</td></tr><tr><td>计算忙，但整体吞吐不理想</td><td>块形状、支持精度、填充浪费与阵列利用率。</td></tr><tr><td>搬运和计算都不忙</td><td>任务是否太小、控制或同步是否过重、并行度是否不足。</td></tr><tr><td>部分核任务早早完成，少数拖尾</td><td>任务划分、尾块与负载不均。</td></tr></tbody></table><p>多开任务不一定更快；双缓冲不一定更快；融合也可能增加局部资源压力。应先确认正确，再用目标平台的剖析工具验证瓶颈，避免只凭公式猜测。</p></section><section id="npu-validation"><h2>13. 从能运行到可信：正确性与性能检查单</h2><h3>先写清算子契约</h3><ul><li>支持哪些形状、数据类型与布局？是否支持广播、非连续输入和空张量？</li><li>输入和输出是否允许别名或原地更新？</li><li>如何处理 NaN、Inf、边界值与精度误差？</li><li>哪些情况应明确拒绝，而不是默认示例能处理？</li></ul><h3>测试不只测整齐的大张量</h3><table><thead><tr><th>测试组</th><th>目的</th></tr></thead><tbody><tr><td>小于一个块、恰好一个块、刚好多一个元素</td><td>检查循环范围和尾块。</td></tr><tr><td>不同任务数、不能均匀切分的长度</td><td>检查无遗漏、无重复写与负载划分。</td></tr><tr><td>随机输入、零值、正负值及契约支持的特殊值</td><td>与参考实现比较数值行为。</td></tr><tr><td>归约和矩阵乘的不同规模</td><td>验证误差随累加长度的变化。</td></tr><tr><td>重复运行与并发环境下的受支持用法</td><td>排查生命周期、同步和偶发错误。</td></tr></tbody></table><p>浮点比较常采用 <code>|实际值−参考值| ≤ atol + rtol×|参考值|</code>；atol、rtol 应根据数据类型、运算和参考精度选择，不能任意用一个宽松阈值掩盖错误。</p><h3>再测性能</h3><ol><li>预热，区分编译／初始化与稳定执行时间。</li><li>使用正确的同步或事件计时，不能只测异步提交耗时。</li><li>分别说明测的是 Kernel 本身，还是含 Host–Device 传输的端到端时间。</li><li>记录输入形状、类型、芯片、软件版本、Tiling 与任务数，才能比较。</li><li>每次尽量改变一个因素，并保留正确性回归。</li></ol><p>本文未在 NPU 上执行、编译或测量这些教学例子；文件校验或网页展示检查不等于算子验证。</p></section><section id="npu-next-steps"><h2>14. 实践路线与资料边界</h2><table><thead><tr><th>阶段</th><th>产出</th><th>完成标准</th></tr></thead><tbody><tr><td>1 · Add</td><td>最小三阶段 Kernel</td><td>能解释每块地址、有效长度、尾块与结果写回。</td></tr><tr><td>2 · Add + ReLU</td><td>局部数据上的融合</td><td>能算清省去哪些中间读写，验证数值语义。</td></tr><tr><td>3 · ReduceSum</td><td>局部归约与分阶段合并</td><td>能解释跨任务汇合及浮点误差。</td></tr><tr><td>4 · MatMul</td><td>输出分块、K 累加与布局准备</td><td>能区分软件块与硬件计算块，解释容量约束。</td></tr><tr><td>5 · 调优</td><td>性能报告与可复现配置</td><td>用剖析证据说明瓶颈和每项优化的收益。</td></tr></tbody></table><h3>开始写可运行工程前，需要确认</h3><ul><li>NPU 具体型号、产品形态与可用执行资源。</li><li>驱动、固件、CANN Toolkit 与编译环境版本。</li><li>采用直接 Kernel 调用，还是接入某个框架／自定义算子工程。</li><li>第一版支持的 dtype、形状、布局与测试入口。</li></ul><h3>参考资料怎样使用</h3><p>初版实际读取了 Ascend 官方 GitHub 仓库中的四份历史文件：Add Kernel、Host 注册／Tiling、MatMul Kernel 和样例 README，使用旧版 <code>tik2</code> 命名。源码版另外查阅了 ASC-DevKit 的 GitHub 镜像固定引用，核对新 ASC 动态库构建、队列、搬运、归约与 Mmad 接口。来源在页尾区分列出，不混称为同一版本。</p><p><strong>这些来源不是当前芯片完整架构文档，也不能证明本文所有示意路径在目标设备上都可直接执行。</strong>源码实战已补齐完整文件；型号确定后，仍需对照实际 SDK 完成编译、数值、同步及性能验证。不要把源码交付、网页校验或 CPU 模型测试当作 NPU 验收。</p><blockquote>学习顺序：先理解数学，再理解数据路径；先做正确的分块，再做流水和调优。不要把硬件术语的数量，误当成算子开发能力。</blockquote></section><section id="npu-source-map"><h2>15. 源码实战入口：完整目录、职责与交付物</h2><blockquote><strong>本节开始不再只给伪代码：提供四个案例的完整实现、构建文件、消费端和测试。</strong>完整源码不等于已经通过目标编译与设备测试；本机没有 CANN 编译器和 NPU。</blockquote><p><strong>明确选择的教学基线：</strong>Linux、Atlas A2/A3 对应 dav-2201、CANN ≥ 9.0.0 的新 ASC 构建方式，CMake ≥ 3.20。这是为提供一致源码而作的选择，不是用户确认的当前环境。</p><p><strong>本地工程：</strong><code>D:/workspace/dialogue-html/examples/npu-operator-lab</code><br><strong>本次源码包：</strong><code>D:/workspace/dialogue-html/downloads/npu-operator-lab-a36de859f906.zip</code></p><p>下列折叠块内嵌完整文件，离线 HTML 中也能阅读。压缩包额外包含文件校验清单；包名随源码内容变化，旧包不覆盖。</p><pre><code>npu-operator-lab/
+  include/npu_lab.h             Public C ABI
+  src/host/tiling.h             Host tiling plan
+  src/host/npu_ops.cpp          Validation / launch / lifetime
+  src/kernel/launchers.h       Internal host interface
+  src/kernel/elementwise_impl.h
+  src/kernel/add.asc
+  src/kernel/add_relu.asc
+  src/kernel/reduce_sum.asc
+  src/kernel/matmul.asc
+  CMakeLists.txt
+  cmake/NpuLabConfig.cmake.in
+  examples/cpp_client/{CMakeLists.txt,main.cpp}
+  examples/python_client.py
+  tests/{tiling_test.cpp,check_package.py}
+  README.md / NOTICE.md</code></pre><table><caption>图 12｜从业务工程调用到设备执行</caption><tbody><tr><th>外部 C++ / Python</th><td>准备同一 context 的设备输入、输出与 stream</td></tr><tr><th>↓ 公开 C ABI</th><td><code>nl_add_f32</code> 等符号，头文件描述类型和所有权</td></tr><tr><th>共享库 Host 逻辑</th><td>验证参数 → 决定 Tiling → 管理必要的 workspace</td></tr><tr><th>↓ ASC Host 启动函数</th><td>执行 <code>&lt;&lt;&lt;blocks, 0, stream&gt;&gt;&gt;</code> 启动语法</td></tr><tr><th>设备 Kernel</th><td>Vector 或 Cube 执行搬入、计算、搬出</td></tr><tr><th>↑ 同步后返回</th><td>调用者读取结果；本库不接管全局 ACL 生命周期</td></tr></tbody></table><table><thead><tr><th>目录／文件</th><th>谁使用</th><th>作用</th></tr></thead><tbody><tr><td>include/</td><td>业务工程与本库</td><td>稳定的 C 接口；不暴露设备模板、内部队列或 SDK half 类型。</td></tr><tr><td>src/host/</td><td>Host CPU</td><td>约束、切分、启动与工作区生命周期；不是 OPP 的注册回调。</td></tr><tr><td>src/kernel/*.asc</td><td>ASC 编译器</td><td>同时包含设备入口和 Host 启动封装；普通 C++ 不解析其启动语法。</td></tr><tr><td>CMake / cmake/</td><td>构建与安装</td><td>输出 .so、公开头文件与可供 find_package 使用的配置。</td></tr><tr><td>examples/</td><td>真正的外部消费端</td><td>只依赖安装包，不依赖 src/；包含资源管理和结果校验。</td></tr><tr><td>tests/</td><td>开发与验收</td><td>区分 CPU 结构/模型测试与设备运行验证。</td></tr></tbody></table></section><section id="npu-source-build"><h2>16. 构建与安装：源码怎样变成可交付的库</h2><p>本路线采用<strong>直接 Kernel 调用 + 自定义 C ABI 动态库</strong>。它是完整的一条接入路径，不需要伪造 <code>aclnnXxx</code> 生成文件，也不把安装动态库误称为注册了 PyTorch 算子。</p><h3>在目标 Linux NPU 环境执行</h3><pre><code># 示例路径；使用你的实际 CANN 安装位置
+source /usr/local/Ascend/cann/set_env.sh
+cmake -S . -B build \
+  -DCMAKE_ASC_ARCHITECTURES=dav-2201 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$PWD/install"
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+cmake --install build</code></pre><p>命令是待执行步骤，不是已完成的上机日志。目标机器必须提供 ASC 包、SDK 头文件／运行库及兼容驱动。安装到工程自己的目录，不需要 root。切换 SDK 或架构应使用新的构建目录。</p><details><summary>完整文件：CMakeLists.txt · 64 行</summary><pre><code>cmake_minimum_required(VERSION 3.20)
+
+# New ASC-language build path (CANN 9.x); do not silently fall back to old tik2.
+set(CMAKE_ASC_ARCHITECTURES "dav-2201" CACHE STRING "Teaching target architecture")
+if(NOT CMAKE_ASC_ARCHITECTURES STREQUAL "dav-2201")
+    message(FATAL_ERROR "This source implements the dav-2201 Cube layout only")
+endif()
+if(NOT DEFINED ENV{ASCEND_HOME_PATH})
+    message(FATAL_ERROR "Source your CANN set_env.sh before configuring")
+endif()
+find_package(ASC REQUIRED)
+project(NpuLab VERSION 1.0.0 LANGUAGES ASC CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_path(ACL_INCLUDE_DIR acl/acl.h
+    HINTS "$ENV{ASCEND_HOME_PATH}/include" REQUIRED)
+find_library(ACL_LIBRARY ascendcl
+    HINTS "$ENV{ASCEND_HOME_PATH}/lib64" REQUIRED)
+
+add_library(npu_lab SHARED
+    src/host/npu_ops.cpp
+    src/kernel/add.asc
+    src/kernel/add_relu.asc
+    src/kernel/reduce_sum.asc
+    src/kernel/matmul.asc)
+add_library(NpuLab::npu_lab ALIAS npu_lab)
+set_target_properties(npu_lab PROPERTIES
+    LINKER_LANGUAGE ASC
+    VERSION ${PROJECT_VERSION}
+    SOVERSION 1
+    POSITION_INDEPENDENT_CODE ON)
+target_compile_options(npu_lab PRIVATE
+    $&lt;$&lt;COMPILE_LANGUAGE:ASC&gt;:--npu-arch=${CMAKE_ASC_ARCHITECTURES}&gt;
+    $&lt;$&lt;COMPILE_LANGUAGE:ASC&gt;:-fPIC&gt;
+    $&lt;$&lt;COMPILE_LANGUAGE:ASC&gt;:-std=c++17&gt;)
+target_include_directories(npu_lab
+    PUBLIC
+        $&lt;BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include&gt;
+        $&lt;INSTALL_INTERFACE:include&gt;
+    PRIVATE ${ACL_INCLUDE_DIR})
+target_link_libraries(npu_lab PRIVATE ${ACL_LIBRARY})
+
+# Ordinary CPU unit test; this target does not execute NPU code.
+add_executable(npu_lab_tiling_test tests/tiling_test.cpp)
+target_include_directories(npu_lab_tiling_test PRIVATE src/host)
+enable_testing()
+add_test(NAME host_tiling COMMAND npu_lab_tiling_test)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(cmake/NpuLabConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/NpuLabConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/NpuLab)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/NpuLabConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION} COMPATIBILITY SameMajorVersion)
+install(TARGETS npu_lab EXPORT NpuLabTargets
+    LIBRARY DESTINATION lib ARCHIVE DESTINATION lib RUNTIME DESTINATION bin)
+install(FILES include/npu_lab.h DESTINATION include)
+install(EXPORT NpuLabTargets NAMESPACE NpuLab:: DESTINATION lib/cmake/NpuLab)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/NpuLabConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/NpuLabConfigVersion.cmake"
+    DESTINATION lib/cmake/NpuLab)
+</code></pre></details><details><summary>完整文件：cmake/NpuLabConfig.cmake.in · 3 行</summary><pre><code>@PACKAGE_INIT@
+include("${CMAKE_CURRENT_LIST_DIR}/NpuLabTargets.cmake")
+check_required_components(NpuLab)
+</code></pre></details><table><thead><tr><th>安装产物</th><th>用途</th></tr></thead><tbody><tr><td>include/npu_lab.h</td><td>业务侧编译所需的 ABI 声明。</td></tr><tr><td>lib/libnpu_lab.so 与版本链接</td><td>设备代码与 Host 启动封装所在的共享库。</td></tr><tr><td>lib/cmake/NpuLab/</td><td>让独立工程找到导入目标 <code>NpuLab::npu_lab</code>。</td></tr></tbody></table><p><strong>生产端</strong>编译 .asc 需要 ASC 编译器；<strong>消费端</strong>链接已编译库时不用再次编译 Kernel，但仍需要兼容的运行环境；C++ 客户端自己调用 ACL 时还需 ACL 头文件。</p></section><section id="npu-source-add"><h2>17. Case 1 · Add：把单算子的完整骨架逐层拆开</h2><p><strong>契约：</strong>连续等长 FP32，无广播、无输入输出别名；0 ≤ N ≤ 2²⁴。N=0 不启动 Kernel。正常调用同步等待给定 stream，返回后才能按成功路径使用输出。</p><table><caption>按这个顺序读源码，就能沿调用链走完整个 Add</caption><thead><tr><th>顺序</th><th>文件</th><th>重点</th></tr></thead><tbody><tr><td>①</td><td>npu_lab.h</td><td>参数不是 Host 数组，而是设备地址；stream 与内存由谁拥有。</td></tr><tr><td>②</td><td>tiling.h</td><td>256 元素一块，最多8个任务；按 tile 索引均分，避免任务边界落在块内。</td></tr><tr><td>③</td><td>npu_ops.cpp</td><td>验证范围/别名 → 生成计划 → 调启动函数 → 同步；该文件也包含其余案例的完整 Host 包装。</td></tr><tr><td>④</td><td>launchers.h + add.asc</td><td>分隔普通 C++ 与 ASC 编译边界；一个函数排队启动设备 Kernel。</td></tr><tr><td>⑤</td><td>elementwise_impl.h</td><td>分配队列，CopyIn → Add → CopyOut，处理有效尾块与缓冲生命周期。</td></tr></tbody></table><details><summary>完整文件：include/npu_lab.h · 50 行</summary><pre><code>#ifndef NPU_LAB_H
+#define NPU_LAB_H
+#include &lt;stdint.h&gt;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Linux / CANN &gt;= 9.0 / dav-2201 teaching implementation.
+ * All tensor pointers are DEVICE pointers in the caller's current context.
+ * stream must be a valid, non-null aclrtStream from that context.
+ * Functions are synchronous on that stream; do not call from graph capture.
+ * The caller owns initialization, device selection, buffers, and the stream.
+ * Inputs are contiguous. Output must not overlap either input.
+ * Return: 0 success, negative NlStatus, positive ACL runtime error.
+ */
+enum NlStatus {
+    NL_OK = 0,
+    NL_BAD_ARGUMENT = -1,
+    NL_UNSUPPORTED_SHAPE = -2
+};
+
+uint32_t nl_api_version(void);
+const char* nl_build_target(void);
+
+/* float32, equal lengths, no broadcasting. n==0 is a no-op.
+ * Maximum n: 16,777,216. Finite inputs are the tested contract.
+ */
+int nl_add_f32(const float* a, const float* b, float* out,
+               uint32_t n, void* stream);
+int nl_add_relu_f32(const float* a, const float* b, float* out,
+                    uint32_t n, void* stream);
+
+/* float32 -&gt; one float32 scalar. 1 &lt;= n &lt;= 16,777,216.
+ * Two kernel launches on the same stream; internal scratch is owned by library.
+ */
+int nl_reduce_sum_f32(const float* x, float* out,
+                      uint32_t n, void* stream);
+
+/* Row-major A[m,k] @ B[k,n] -&gt; C[m,n]. A/B: IEEE FP16 bit patterns,
+ * NOT integer values. C and accumulation: float32. No transpose/bias/batch.
+ * m,n,k must be positive multiples of 16, each &lt;= 256.
+ * The kernel uses 16x16 output tiles and explicit K accumulation.
+ */
+int nl_matmul_f16_f32(const uint16_t* a, const uint16_t* b, float* out,
+                      uint32_t m, uint32_t n, uint32_t k, void* stream);
+#ifdef __cplusplus
+}
+#endif
+#endif
+</code></pre></details><details><summary>完整文件：src/host/tiling.h · 41 行</summary><pre><code>#ifndef NPU_LAB_TILING_H
+#define NPU_LAB_TILING_H
+#include &lt;cstdint&gt;
+
+namespace nl {
+constexpr uint32_t kTile = 256;
+constexpr uint32_t kMaxBlocks = 8;  // conservative teaching choice, not autotuning
+constexpr uint32_t kMaxLength = 1u &lt;&lt; 24;
+constexpr uint32_t kMatrixTile = 16;
+constexpr uint32_t kMaxMatrixDim = 256;
+constexpr uint32_t kPartialStride = 8; // float32: 32-byte private slot per task
+
+struct VectorPlan {
+    uint32_t length;
+    uint32_t tiles;
+    uint32_t blocks;
+};
+
+inline VectorPlan MakeVectorPlan(uint32_t n) {
+    const uint32_t tiles = n / kTile + (n % kTile != 0);
+    return {n, tiles, tiles &lt; kMaxBlocks ? tiles : kMaxBlocks};
+}
+
+// Identical tile-index partition is used in vector kernels.
+inline uint32_t FirstTile(const VectorPlan&amp; p, uint32_t block) {
+    return p.tiles * block / p.blocks;
+}
+inline uint32_t LastTile(const VectorPlan&amp; p, uint32_t block) {
+    return p.tiles * (block + 1) / p.blocks;
+}
+inline bool ValidMatrix(uint32_t m, uint32_t n, uint32_t k) {
+    return m &amp;&amp; n &amp;&amp; k &amp;&amp; m &lt;= kMaxMatrixDim &amp;&amp; n &lt;= kMaxMatrixDim &amp;&amp;
+           k &lt;= kMaxMatrixDim &amp;&amp; m % kMatrixTile == 0 &amp;&amp;
+           n % kMatrixTile == 0 &amp;&amp; k % kMatrixTile == 0;
+}
+inline uint32_t MatrixBlocks(uint32_t m, uint32_t n) {
+    const uint32_t tiles = (m / kMatrixTile) * (n / kMatrixTile);
+    return tiles &lt; kMaxBlocks ? tiles : kMaxBlocks;
+}
+}
+#endif
+</code></pre></details><details><summary>完整文件：src/host/npu_ops.cpp · 85 行</summary><pre><code>#include "npu_lab.h"
+#include "acl/acl.h"
+#include "tiling.h"
+#include "../kernel/launchers.h"
+#include &lt;cstddef&gt;
+#include &lt;cstdint&gt;
+
+namespace {
+bool Overlaps(const void* a, size_t aBytes, const void* b, size_t bBytes) {
+    const auto x = reinterpret_cast&lt;uintptr_t&gt;(a);
+    const auto y = reinterpret_cast&lt;uintptr_t&gt;(b);
+    // Difference form avoids overflow from computing end addresses.
+    return x &lt;= y ? y - x &lt; aBytes : x - y &lt; bBytes;
+}
+int ValidateBinary(const float* a, const float* b, float* out,
+                   uint32_t n, void* stream) {
+    if (n &gt; nl::kMaxLength) return NL_UNSUPPORTED_SHAPE;
+    if (!stream) return NL_BAD_ARGUMENT;
+    if (n == 0) return NL_OK;
+    if (!a || !b || !out) return NL_BAD_ARGUMENT;
+    const size_t bytes = static_cast&lt;size_t&gt;(n) * sizeof(float);
+    if (Overlaps(a, bytes, out, bytes) || Overlaps(b, bytes, out, bytes))
+        return NL_BAD_ARGUMENT;
+    return NL_OK;
+}
+}
+
+extern "C" uint32_t nl_api_version(void) { return 1; }
+extern "C" const char* nl_build_target(void) {
+    return "teaching source; Linux; CANN&gt;=9.0 ASC; dav-2201; hardware validation pending";
+}
+
+extern "C" int nl_add_f32(const float* a, const float* b, float* out,
+                           uint32_t n, void* stream) {
+    const int check = ValidateBinary(a, b, out, n, stream);
+    if (check != NL_OK || n == 0) return check;
+    const auto p = nl::MakeVectorPlan(n);
+    nl_launch_add(p.blocks, stream, a, b, out, p.length, p.tiles);
+    return aclrtSynchronizeStream(static_cast&lt;aclrtStream&gt;(stream));
+}
+
+extern "C" int nl_add_relu_f32(const float* a, const float* b, float* out,
+                                uint32_t n, void* stream) {
+    const int check = ValidateBinary(a, b, out, n, stream);
+    if (check != NL_OK || n == 0) return check;
+    const auto p = nl::MakeVectorPlan(n);
+    nl_launch_add_relu(p.blocks, stream, a, b, out, p.length, p.tiles);
+    return aclrtSynchronizeStream(static_cast&lt;aclrtStream&gt;(stream));
+}
+
+extern "C" int nl_reduce_sum_f32(const float* x, float* out,
+                                  uint32_t n, void* stream) {
+    if (n == 0 || n &gt; nl::kMaxLength) return NL_UNSUPPORTED_SHAPE;
+    if (!x || !out || !stream) return NL_BAD_ARGUMENT;
+    if (Overlaps(x, static_cast&lt;size_t&gt;(n) * sizeof(float), out, sizeof(float)))
+        return NL_BAD_ARGUMENT;
+    const auto p = nl::MakeVectorPlan(n);
+    void* workspace = nullptr;
+    const size_t bytes = p.blocks * nl::kPartialStride * sizeof(float);
+    aclError status = aclrtMalloc(&amp;workspace, bytes, ACL_MEM_MALLOC_HUGE_FIRST);
+    if (status != ACL_SUCCESS) return status;
+    nl_launch_reduce_partials(p.blocks, stream, x, workspace, p.length, p.tiles);
+    // Same stream orders the complete partial kernel before the final kernel.
+    nl_launch_reduce_final(stream, workspace, out, p.blocks);
+    status = aclrtSynchronizeStream(static_cast&lt;aclrtStream&gt;(stream));
+    if (status != ACL_SUCCESS) {
+        // Completion is not established. Avoid recycling potentially live scratch.
+        // Treat a device execution fault as fatal; recover/reset the owned context.
+        return status;
+    }
+    return aclrtFree(workspace);
+}
+
+extern "C" int nl_matmul_f16_f32(const uint16_t* a, const uint16_t* b, float* out,
+                                  uint32_t m, uint32_t n, uint32_t k, void* stream) {
+    if (!nl::ValidMatrix(m, n, k)) return NL_UNSUPPORTED_SHAPE;
+    if (!a || !b || !out || !stream) return NL_BAD_ARGUMENT;
+    const size_t aBytes = static_cast&lt;size_t&gt;(m) * k * sizeof(uint16_t);
+    const size_t bBytes = static_cast&lt;size_t&gt;(k) * n * sizeof(uint16_t);
+    const size_t cBytes = static_cast&lt;size_t&gt;(m) * n * sizeof(float);
+    if (Overlaps(a, aBytes, out, cBytes) || Overlaps(b, bBytes, out, cBytes))
+        return NL_BAD_ARGUMENT;
+    nl_launch_matmul(nl::MatrixBlocks(m, n), stream, a, b, out, m, n, k);
+    return aclrtSynchronizeStream(static_cast&lt;aclrtStream&gt;(stream));
+}
+</code></pre></details><details><summary>完整文件：src/kernel/launchers.h · 20 行</summary><pre><code>#ifndef NPU_LAB_LAUNCHERS_H
+#define NPU_LAB_LAUNCHERS_H
+#include &lt;cstdint&gt;
+
+// Internal host ABI. Implementations live beside the device kernels in .asc.
+// These enqueue work only. The public library wrapper handles synchronization.
+extern "C" {
+void nl_launch_add(uint32_t blocks, void* stream, const void* a,
+                   const void* b, void* out, uint32_t n, uint32_t tiles);
+void nl_launch_add_relu(uint32_t blocks, void* stream, const void* a,
+                        const void* b, void* out, uint32_t n, uint32_t tiles);
+void nl_launch_reduce_partials(uint32_t blocks, void* stream, const void* x,
+                               void* partials, uint32_t n, uint32_t tiles);
+void nl_launch_reduce_final(void* stream, const void* partials,
+                            void* out, uint32_t blocks);
+void nl_launch_matmul(uint32_t blocks, void* stream, const void* a,
+                      const void* b, void* out, uint32_t m,
+                      uint32_t n, uint32_t k);
+}
+#endif
+</code></pre></details><details><summary>完整文件：src/kernel/elementwise_impl.h · 81 行</summary><pre><code>#ifndef NPU_LAB_ELEMENTWISE_IMPL_H
+#define NPU_LAB_ELEMENTWISE_IMPL_H
+#include "kernel_operator.h"
+#include "../host/tiling.h"
+
+// Shared implementation, instantiated by Add and Add+ReLU entrypoints.
+// Depth 1 is deliberate: correctness-first; this is NOT a tuned double-buffer.
+template&lt;bool FuseRelu&gt;
+class ElementwiseKernel {
+public:
+    __aicore__ inline void Init(__gm__ float* a, __gm__ float* b,
+                               __gm__ float* out, uint32_t n, uint32_t tiles) {
+        n_ = n;
+        const uint32_t block = AscendC::GetBlockIdx();
+        const uint32_t blocks = AscendC::GetBlockNum();
+        first_ = tiles * block / blocks;
+        last_ = tiles * (block + 1) / blocks;
+        aGm_.SetGlobalBuffer(a, n);
+        bGm_.SetGlobalBuffer(b, n);
+        outGm_.SetGlobalBuffer(out, n);
+        pipe_.InitBuffer(aQueue_, 1, nl::kTile * sizeof(float));
+        pipe_.InitBuffer(bQueue_, 1, nl::kTile * sizeof(float));
+        pipe_.InitBuffer(outQueue_, 1, nl::kTile * sizeof(float));
+    }
+
+    __aicore__ inline void Process() {
+        for (uint32_t tile = first_; tile &lt; last_; ++tile) {
+            const uint32_t offset = tile * nl::kTile;
+            const uint32_t remaining = n_ - offset;
+            const uint32_t valid = remaining &lt; nl::kTile ? remaining : nl::kTile;
+            CopyIn(offset, valid);
+            Compute(valid);
+            CopyOut(offset, valid);
+        }
+    }
+
+private:
+    __aicore__ inline void CopyIn(uint32_t offset, uint32_t valid) {
+        auto a = aQueue_.AllocTensor&lt;float&gt;();
+        auto b = bQueue_.AllocTensor&lt;float&gt;();
+        // DataCopyExtParams.blockLen is BYTES, not element count.
+        AscendC::DataCopyExtParams p{
+            1, static_cast&lt;uint32_t&gt;(valid * sizeof(float)), 0, 0, 0};
+        AscendC::DataCopyPadExtParams&lt;float&gt; pad{false, 0, 0, 0.0f};
+        AscendC::DataCopyPad(a, aGm_[offset], p, pad);
+        AscendC::DataCopyPad(b, bGm_[offset], p, pad);
+        aQueue_.EnQue(a);
+        bQueue_.EnQue(b);
+    }
+
+    __aicore__ inline void Compute(uint32_t valid) {
+        auto a = aQueue_.DeQue&lt;float&gt;();
+        auto b = bQueue_.DeQue&lt;float&gt;();
+        auto out = outQueue_.AllocTensor&lt;float&gt;();
+        AscendC::Add(out, a, b, valid);
+        if constexpr (FuseRelu) {
+            // ReLU consumes the Add result in the same UB allocation.
+            AscendC::PipeBarrier&lt;PIPE_V&gt;();
+            AscendC::Maxs(out, out, 0.0f, valid);
+        }
+        outQueue_.EnQue(out);
+        aQueue_.FreeTensor(a);
+        bQueue_.FreeTensor(b);
+    }
+
+    __aicore__ inline void CopyOut(uint32_t offset, uint32_t valid) {
+        auto out = outQueue_.DeQue&lt;float&gt;();
+        AscendC::DataCopyExtParams p{
+            1, static_cast&lt;uint32_t&gt;(valid * sizeof(float)), 0, 0, 0};
+        // Only valid bytes reach GM. UB padding is never an output allocation.
+        AscendC::DataCopyPad(outGm_[offset], out, p);
+        outQueue_.FreeTensor(out);
+    }
+
+    AscendC::TPipe pipe_;
+    AscendC::TQue&lt;AscendC::TPosition::VECIN, 1&gt; aQueue_, bQueue_;
+    AscendC::TQue&lt;AscendC::TPosition::VECOUT, 1&gt; outQueue_;
+    AscendC::GlobalTensor&lt;float&gt; aGm_, bGm_, outGm_;
+    uint32_t n_, first_, last_;
+};
+#endif
+</code></pre></details><details><summary>完整文件：src/kernel/add.asc · 18 行</summary><pre><code>#include "acl/acl.h"
+#include "elementwise_impl.h"
+#include "launchers.h"
+
+__global__ __vector__ void nl_add_kernel(__gm__ float* a, __gm__ float* b,
+                                         __gm__ float* out, uint32_t n,
+                                         uint32_t tiles) {
+    ElementwiseKernel&lt;false&gt; kernel;
+    kernel.Init(a, b, out, n, tiles);
+    kernel.Process();
+}
+
+extern "C" void nl_launch_add(uint32_t blocks, void* stream, const void* a,
+                               const void* b, void* out,
+                               uint32_t n, uint32_t tiles) {
+    nl_add_kernel&lt;&lt;&lt;blocks, 0, stream&gt;&gt;&gt;(
+        (float*)a, (float*)b, (float*)out, n, tiles);
+}
+</code></pre></details><h3>带着 N=1000 跟一次</h3><p>4 个 tile、4 个任务，前三个各处理256个元素，最后一个处理232个。最后任务的读取与写出长度均为 <code>232 × sizeof(float)</code> 字节。DataCopyPad 的参数以字节计；Vector Add 的 count 以元素计。局部存储仍按256个元素分配，不向 GM 越界读写。</p><p>源码使用队列深度1，先建立清楚的所有权和依赖，不宣称已经实现高效双缓冲。本例可接受未填满块的长度，但这不意味着所有其他架构或搬运 API 都有同样的尾块能力。</p></section><section id="npu-source-fused"><h2>18. Case 2 · Add+ReLU：共享骨架，完整实现融合</h2><p><strong>不是只给一行修改建议。</strong>这里提供完整入口与启动封装，并与上一节的完整 <code>ElementwiseKernel</code> 组合成实际构建目标。模板参数为 true 时，Add 之后执行同一 UB 输出上的 Maxs(0)。</p><details><summary>完整文件：src/kernel/add_relu.asc · 18 行</summary><pre><code>#include "acl/acl.h"
+#include "elementwise_impl.h"
+#include "launchers.h"
+
+__global__ __vector__ void nl_add_relu_kernel(__gm__ float* a, __gm__ float* b,
+                                              __gm__ float* out, uint32_t n,
+                                              uint32_t tiles) {
+    ElementwiseKernel&lt;true&gt; kernel;
+    kernel.Init(a, b, out, n, tiles);
+    kernel.Process();
+}
+
+extern "C" void nl_launch_add_relu(uint32_t blocks, void* stream, const void* a,
+                                    const void* b, void* out,
+                                    uint32_t n, uint32_t tiles) {
+    nl_add_relu_kernel&lt;&lt;&lt;blocks, 0, stream&gt;&gt;&gt;(
+        (float*)a, (float*)b, (float*)out, n, tiles);
+}
+</code></pre></details><p>完整依赖：<a href="#npu-source-add" rel="noreferrer noopener">第17章的公开头文件、Tiling、Host 包装、内部声明与共用 Kernel</a>，加上本文件；根 CMake 已列出所有文件。没有省略的外部业务辅助函数。</p><p>两次 Vector 操作之间放置同流水线屏障，输出只写回一次。共享实现消除了重复搬运代码，但不掩盖融合操作。该案例沿用 FP32 契约；前文 FP16 流量表用于说明方法，不是本源代码的数据类型。</p></section><section id="npu-source-reduce"><h2>19. Case 3 · ReduceSum：完整两阶段源码与工作区</h2><p><strong>输入 FP32[N]，输出 FP32[1]，N 必须大于零。</strong>第一阶段每个任务遍历自己的 tile，通过 ReduceSum 得到块内和，再用 Vector Add 累入该任务的局部累加器。第二阶段汇总所有任务的部分和。</p><table><caption>图 13｜私有槽位避免并发覆盖，第二次启动实现全局汇合</caption><tbody><tr><th>任务0</th><td>[sum0, 0, 0, 0, 0, 0, 0, 0]</td></tr><tr><th>任务1</th><td>[sum1, 0, 0, 0, 0, 0, 0, 0]</td></tr><tr><th>更多任务</th><td>每个任务独占32字节，最多8个任务。</td></tr><tr><th>同 stream 第二个 Kernel</th><td>读这些部分和及已初始化的零 → ReduceSum → 仅写出一个 FP32。</td></tr><tr><th>Host</th><td>同步完成后释放工作区；不是排队提交后立即释放。</td></tr></tbody></table><details><summary>完整文件：src/kernel/reduce_sum.asc · 98 行</summary><pre><code>#include "acl/acl.h"
+#include "kernel_operator.h"
+#include "../host/tiling.h"
+#include "launchers.h"
+
+__global__ __vector__ void nl_reduce_partials_kernel(
+    __gm__ float* x, __gm__ float* partials, uint32_t n, uint32_t tiles) {
+    const uint32_t block = AscendC::GetBlockIdx();
+    const uint32_t blocks = AscendC::GetBlockNum();
+    const uint32_t first = tiles * block / blocks;
+    const uint32_t last = tiles * (block + 1) / blocks;
+
+    AscendC::TPipe pipe;
+    AscendC::TQue&lt;AscendC::TPosition::VECIN, 1&gt; input;
+    AscendC::TQue&lt;AscendC::TPosition::VECOUT, 1&gt; output;
+    AscendC::TBuf&lt;AscendC::TPosition::VECCALC&gt; scratchBuf, sumBuf, accBuf;
+    pipe.InitBuffer(input, 1, nl::kTile * sizeof(float));
+    pipe.InitBuffer(output, 1, nl::kPartialStride * sizeof(float));
+    pipe.InitBuffer(scratchBuf, nl::kTile * sizeof(float));
+    pipe.InitBuffer(sumBuf, nl::kPartialStride * sizeof(float));
+    pipe.InitBuffer(accBuf, nl::kPartialStride * sizeof(float));
+
+    AscendC::GlobalTensor&lt;float&gt; xGm, pGm;
+    xGm.SetGlobalBuffer(x, n);
+    pGm.SetGlobalBuffer(partials, blocks * nl::kPartialStride);
+    auto scratch = scratchBuf.Get&lt;float&gt;();
+    auto sum = sumBuf.Get&lt;float&gt;();
+    auto acc = accBuf.Get&lt;float&gt;();
+    AscendC::Duplicate(acc, 0.0f, nl::kPartialStride);
+    AscendC::PipeBarrier&lt;PIPE_V&gt;();
+
+    for (uint32_t tile = first; tile &lt; last; ++tile) {
+        const uint32_t offset = tile * nl::kTile;
+        const uint32_t left = n - offset;
+        const uint32_t valid = left &lt; nl::kTile ? left : nl::kTile;
+        auto local = input.AllocTensor&lt;float&gt;();
+        AscendC::DataCopyExtParams copy{
+            1, static_cast&lt;uint32_t&gt;(valid * sizeof(float)), 0, 0, 0};
+        AscendC::DataCopyPadExtParams&lt;float&gt; pad{false, 0, 0, 0.0f};
+        AscendC::DataCopyPad(local, xGm[offset], copy, pad);
+        input.EnQue(local);
+        local = input.DeQue&lt;float&gt;();
+        // Only valid elements participate; the other UB positions are irrelevant.
+        AscendC::ReduceSum(sum, local, scratch, static_cast&lt;int32_t&gt;(valid));
+        AscendC::PipeBarrier&lt;PIPE_V&gt;();
+        AscendC::Add(acc, acc, sum, 1);
+        AscendC::PipeBarrier&lt;PIPE_V&gt;();
+        input.FreeTensor(local);
+    }
+
+    auto out = output.AllocTensor&lt;float&gt;();
+    // Layout of each private slot: [partial_sum, 0, 0, 0, 0, 0, 0, 0].
+    AscendC::Adds(out, acc, 0.0f, nl::kPartialStride);
+    output.EnQue(out);
+    out = output.DeQue&lt;float&gt;();
+    AscendC::DataCopy(pGm[block * nl::kPartialStride], out, nl::kPartialStride);
+    output.FreeTensor(out);
+}
+
+__global__ __vector__ void nl_reduce_final_kernel(
+    __gm__ float* partials, __gm__ float* result, uint32_t blocks) {
+    AscendC::TPipe pipe;
+    AscendC::TQue&lt;AscendC::TPosition::VECIN, 1&gt; input;
+    AscendC::TQue&lt;AscendC::TPosition::VECOUT, 1&gt; output;
+    AscendC::TBuf&lt;AscendC::TPosition::VECCALC&gt; scratchBuf;
+    constexpr uint32_t capacity = nl::kMaxBlocks * nl::kPartialStride;
+    pipe.InitBuffer(input, 1, capacity * sizeof(float));
+    pipe.InitBuffer(output, 1, nl::kPartialStride * sizeof(float));
+    pipe.InitBuffer(scratchBuf, capacity * sizeof(float));
+    AscendC::GlobalTensor&lt;float&gt; pGm, outGm;
+    const uint32_t count = blocks * nl::kPartialStride;
+    pGm.SetGlobalBuffer(partials, count);
+    outGm.SetGlobalBuffer(result, 1);
+
+    auto in = input.AllocTensor&lt;float&gt;();
+    AscendC::DataCopy(in, pGm, count);
+    input.EnQue(in);
+    in = input.DeQue&lt;float&gt;();
+    auto out = output.AllocTensor&lt;float&gt;();
+    AscendC::ReduceSum(out, in, scratchBuf.Get&lt;float&gt;(), static_cast&lt;int32_t&gt;(count));
+    output.EnQue(out);
+    input.FreeTensor(in);
+    out = output.DeQue&lt;float&gt;();
+    AscendC::DataCopyExtParams copy{1, sizeof(float), 0, 0, 0};
+    AscendC::DataCopyPad(outGm, out, copy); // exactly one scalar to GM
+    output.FreeTensor(out);
+}
+
+extern "C" void nl_launch_reduce_partials(uint32_t blocks, void* stream,
+    const void* x, void* partials, uint32_t n, uint32_t tiles) {
+    nl_reduce_partials_kernel&lt;&lt;&lt;blocks, 0, stream&gt;&gt;&gt;(
+        (float*)x, (float*)partials, n, tiles);
+}
+extern "C" void nl_launch_reduce_final(void* stream, const void* partials,
+    void* out, uint32_t blocks) {
+    nl_reduce_final_kernel&lt;&lt;&lt;1, 0, stream&gt;&gt;&gt;(
+        (float*)partials, (float*)out, blocks);
+}
+</code></pre></details><p>Host 的两次启动与 aclrtMalloc / 同步 / aclrtFree 均已在第17章 <code>nl_reduce_sum_f32</code> 中完整给出。两个 Kernel 在同一 stream 上排序，这里不假设 Kernel 内存在全设备屏障。</p><p>若运行时同步报错，无法证明设备不再使用工作区，示例不会立即回收该小块 scratch；宿主需进入故障恢复而非无限重试。正常路径无此遗留分配。</p></section><section id="npu-source-matmul"><h2>20. Case 4 · MatMul：完整 Cube 路径，而非调用伪函数</h2><p><strong>明确缩小支持域：</strong>A、B 是连续行主序 FP16，输出与累加为 FP32；M、N、K 都是16的正倍数且不大于256。没有广播、batch、bias、数学转置或非对齐尾块。Host 对不支持的形状明确返回错误，不会静默算错。</p><p>每个任务循环领取16×16输出块，沿K每16个元素累加。第一批设置零初值，后续批保留L0C部分和。A/B 经 ND→NZ 搬到L1，再准备 L0A/L0B 布局，执行 Mmad，最后 Fixpipe 写回完整矩阵对应位置。</p><details><summary>完整文件：src/kernel/matmul.asc · 110 行</summary><pre><code>#include "acl/acl.h"
+#include "kernel_operator.h"
+#include "../host/tiling.h"
+#include "launchers.h"
+
+// dav-2201 only. ND GM input -&gt; NZ L1 -&gt; Zz L0A / Zn L0B -&gt; NZ L0C -&gt; ND GM.
+// Each output tile is 16x16; all supported dimensions are multiples of 16.
+// This is a deliberately serialized teaching implementation, not a tuned GEMM.
+__global__ __cube__ void nl_matmul_kernel(
+    __gm__ half* a, __gm__ half* b, __gm__ float* out,
+    uint32_t m, uint32_t n, uint32_t k) {
+    AscendC::InitSocState();
+    constexpr uint32_t t = nl::kMatrixTile;
+    constexpr uint32_t tileElements = t * t;
+    AscendC::GlobalTensor&lt;half&gt; aGm, bGm;
+    AscendC::GlobalTensor&lt;float&gt; cGm;
+    aGm.SetGlobalBuffer(a, m * k);
+    bGm.SetGlobalBuffer(b, k * n);
+    cGm.SetGlobalBuffer(out, m * n);
+
+    // A1/B1 share the L1 address space: use disjoint byte offsets.
+    AscendC::LocalTensor&lt;half&gt; a1(AscendC::TPosition::A1, 0, tileElements);
+    AscendC::LocalTensor&lt;half&gt; b1(
+        AscendC::TPosition::B1, tileElements * sizeof(half), tileElements);
+    // A2, B2, CO1 are different physical local memories: offset zero is separate.
+    AscendC::LocalTensor&lt;half&gt; a2(AscendC::TPosition::A2, 0, tileElements);
+    AscendC::LocalTensor&lt;half&gt; b2(AscendC::TPosition::B2, 0, tileElements);
+    AscendC::LocalTensor&lt;float&gt; c0(AscendC::TPosition::CO1, 0, tileElements);
+
+    const uint32_t nTiles = n / t;
+    const uint32_t outputTiles = (m / t) * nTiles;
+    for (uint32_t tile = AscendC::GetBlockIdx(); tile &lt; outputTiles;
+         tile += AscendC::GetBlockNum()) {
+        const uint32_t row = (tile / nTiles) * t;
+        const uint32_t col = (tile % nTiles) * t;
+        for (uint32_t k0 = 0; k0 &lt; k; k0 += t) {
+            AscendC::Nd2NzParams aCopy{};
+            aCopy.ndNum = 1;
+            aCopy.nValue = t;
+            aCopy.dValue = t;
+            aCopy.srcNdMatrixStride = 0;
+            aCopy.srcDValue = k; // full GM row stride, NOT tile width
+            aCopy.dstNzC0Stride = t;
+            aCopy.dstNzNStride = 1;
+            aCopy.dstNzMatrixStride = 0;
+            AscendC::Nd2NzParams bCopy = aCopy;
+            bCopy.srcDValue = n;
+            AscendC::DataCopy(a1, aGm[row * k + k0], aCopy);
+            AscendC::DataCopy(b1, bGm[k0 * n + col], bCopy);
+            AscendC::SetFlag&lt;AscendC::HardEvent::MTE2_MTE1&gt;(EVENT_ID0);
+            AscendC::WaitFlag&lt;AscendC::HardEvent::MTE2_MTE1&gt;(EVENT_ID0);
+
+            AscendC::LoadData2DParams loadA{};
+            loadA.startIndex = 0;
+            loadA.repeatTimes = 1;
+            loadA.srcStride = 1;
+            loadA.dstGap = 0;
+            loadA.ifTranspose = false;
+            AscendC::LoadData(a2, a1, loadA);
+            // Convert B's local arrangement to the operand layout required by Mmad.
+            // This is NOT a change to the public mathematical operation A @ B.
+            AscendC::LoadData2dTransposeParams loadB{};
+            loadB.startIndex = 0;
+            loadB.repeatTimes = 1;
+            loadB.srcStride = 1;
+            loadB.dstGap = 1;
+            loadB.dstFracGap = 0;
+            AscendC::LoadDataWithTranspose(b2, b1, loadB);
+            AscendC::SetFlag&lt;AscendC::HardEvent::MTE1_M&gt;(EVENT_ID0);
+            AscendC::WaitFlag&lt;AscendC::HardEvent::MTE1_M&gt;(EVENT_ID0);
+
+            AscendC::MmadParams mm{};
+            mm.m = t;
+            mm.n = t;
+            mm.k = t;
+            mm.cmatrixInitVal = (k0 == 0); // zero on first K tile; accumulate later
+            mm.cmatrixSource = false;
+            AscendC::Mmad(c0, a2, b2, mm);
+
+            // Protect both operand buffers and L1 before the next K tile.
+            // Conservative synchronization makes ownership easy to inspect.
+            AscendC::SetFlag&lt;AscendC::HardEvent::M_MTE1&gt;(EVENT_ID1);
+            AscendC::WaitFlag&lt;AscendC::HardEvent::M_MTE1&gt;(EVENT_ID1);
+            AscendC::SetFlag&lt;AscendC::HardEvent::MTE1_MTE2&gt;(EVENT_ID1);
+            AscendC::WaitFlag&lt;AscendC::HardEvent::MTE1_MTE2&gt;(EVENT_ID1);
+        }
+        AscendC::SetFlag&lt;AscendC::HardEvent::M_FIX&gt;(EVENT_ID0);
+        AscendC::WaitFlag&lt;AscendC::HardEvent::M_FIX&gt;(EVENT_ID0);
+        AscendC::FixpipeParamsV220 store{};
+        store.mSize = t;
+        store.nSize = t;
+        store.srcStride = t;
+        store.dstStride = n; // stride of the complete output matrix
+        store.ndNum = 1;
+        store.srcNdStride = 0;
+        store.dstNdStride = 0;
+        store.deqScalar = 0;
+        AscendC::Fixpipe(cGm[row * n + col], c0, store);
+        // Do not overwrite L0C for a new output tile while Fixpipe reads it.
+        AscendC::SetFlag&lt;AscendC::HardEvent::FIX_M&gt;(EVENT_ID0);
+        AscendC::WaitFlag&lt;AscendC::HardEvent::FIX_M&gt;(EVENT_ID0);
+    }
+    AscendC::PipeBarrier&lt;PIPE_ALL&gt;();
+}
+
+extern "C" void nl_launch_matmul(uint32_t blocks, void* stream,
+    const void* a, const void* b, void* out, uint32_t m, uint32_t n, uint32_t k) {
+    nl_matmul_kernel&lt;&lt;&lt;blocks, 0, stream&gt;&gt;&gt;(
+        (half*)a, (half*)b, (float*)out, m, n, k);
+}
+</code></pre></details><h3>读源码时特别看四处</h3><ol><li>A 的 <code>srcDValue = k</code>，B 的 <code>srcDValue = n</code>：采用各自完整矩阵的行跨度，不是都填16。</li><li>A1 与 B1 共用的 L1 地址空间必须错开；不同 L0 存储中的地址0不是相互覆盖。</li><li>B 的局部布局转换不是把业务运算改成 A×Bᵀ；公开接口仍是 A×B。</li><li>下一轮覆盖操作数或 L0C 前必须等前一个读者结束，保守事件同步在代码中显式展示。</li></ol><p>这是一份便于检查的数据路径实现，不是高性能 GEMM。缓存复用、流水重叠、跨核策略和精度边界仍需实测。CPU 索引模型不能验证硬件上的 NZ/Zz/Zn 格式和事件语义；这部分必须上机验收。</p></section><section id="npu-source-consumer"><h2>21. 其他工程怎样真正用起来：C++ 与 Python 完整消费端</h2><h3>独立 C++ 工程</h3><p><code>examples/cpp_client</code> 有自己的 CMake，只通过安装目录寻找导出目标。它不包含算子 src/，也不自行编译 .asc。</p><pre><code>cmake -S examples/cpp_client -B client-build \
+  -DCMAKE_PREFIX_PATH="$PWD/install"
+cmake --build client-build --parallel
+export LD_LIBRARY_PATH="$PWD/install/lib:${LD_LIBRARY_PATH:-}"
+./client-build/npu_lab_client 0</code></pre><details><summary>完整文件：examples/cpp_client/CMakeLists.txt · 15 行</summary><pre><code>cmake_minimum_required(VERSION 3.20)
+project(NpuLabConsumer LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# This is a genuinely separate consumer: it needs the installed package,
+# not the operator's src/ directory or the ASC compiler.
+find_package(NpuLab 1 CONFIG REQUIRED)
+find_path(ACL_INCLUDE_DIR acl/acl.h
+    HINTS "$ENV{ASCEND_HOME_PATH}/include" REQUIRED)
+find_library(ACL_LIBRARY ascendcl
+    HINTS "$ENV{ASCEND_HOME_PATH}/lib64" REQUIRED)
+add_executable(npu_lab_client main.cpp)
+target_include_directories(npu_lab_client PRIVATE ${ACL_INCLUDE_DIR})
+target_link_libraries(npu_lab_client PRIVATE NpuLab::npu_lab ${ACL_LIBRARY})
+</code></pre></details><details><summary>完整文件：examples/cpp_client/main.cpp · 139 行</summary><pre><code>#include "npu_lab.h"
+#include "acl/acl.h"
+#include &lt;algorithm&gt;
+#include &lt;cmath&gt;
+#include &lt;cstdint&gt;
+#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+
+static void Check(int status, const char* where) {
+    if (status != 0)
+        throw std::runtime_error(std::string(where) + ": status=" + std::to_string(status));
+}
+class Session {
+public:
+    aclrtStream stream = nullptr;
+    explicit Session(int device) : device_(device) {
+        Check(aclInit(nullptr), "aclInit");
+        try {
+            Check(aclrtSetDevice(device_), "aclrtSetDevice");
+            selected_ = true;
+            Check(aclrtCreateStream(&amp;stream), "aclrtCreateStream");
+        } catch (...) {
+            if (selected_) aclrtResetDevice(device_);
+            aclFinalize();
+            throw;
+        }
+    }
+    ~Session() {
+        if (stream) { aclrtSynchronizeStream(stream); aclrtDestroyStream(stream); }
+        if (selected_) aclrtResetDevice(device_);
+        aclFinalize();
+    }
+    Session(const Session&amp;) = delete;
+    Session&amp; operator=(const Session&amp;) = delete;
+private:
+    int device_;
+    bool selected_ = false;
+};
+class DeviceBuffer {
+public:
+    void* ptr = nullptr;
+    const size_t bytes;
+    explicit DeviceBuffer(size_t size) : bytes(size) {
+        Check(aclrtMalloc(&amp;ptr, bytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc");
+    }
+    ~DeviceBuffer() { if (ptr) aclrtFree(ptr); }
+    DeviceBuffer(const DeviceBuffer&amp;) = delete;
+    DeviceBuffer&amp; operator=(const DeviceBuffer&amp;) = delete;
+    void Upload(const void* host) {
+        Check(aclrtMemcpy(ptr, bytes, host, bytes, ACL_MEMCPY_HOST_TO_DEVICE), "H2D");
+    }
+    void Download(void* host) const {
+        Check(aclrtMemcpy(host, bytes, ptr, bytes, ACL_MEMCPY_DEVICE_TO_HOST), "D2H");
+    }
+};
+static void Near(float actual, double expected, double atol = 1e-5, double rtol = 1e-5) {
+    // Reject NaN explicitly; abs(NaN)&gt;limit would otherwise be false.
+    if (!std::isfinite(actual) || !std::isfinite(expected) ||
+        std::abs(actual - expected) &gt; atol + rtol * std::abs(expected))
+        throw std::runtime_error("numerical mismatch");
+}
+static void TestVector(uint32_t n, aclrtStream stream) {
+    std::vector&lt;float&gt; a(n), b(n), out(n);
+    for (uint32_t i = 0; i &lt; n; ++i) {
+        a[i] = (static_cast&lt;int&gt;(i % 17) - 8) * 0.25f;
+        b[i] = (static_cast&lt;int&gt;(i % 11) - 5) * 0.5f;
+    }
+    DeviceBuffer da(n * sizeof(float)), db(n * sizeof(float)), dc(n * sizeof(float));
+    da.Upload(a.data()); db.Upload(b.data());
+    Check(nl_add_f32((float*)da.ptr, (float*)db.ptr, (float*)dc.ptr, n, stream), "Add");
+    dc.Download(out.data());
+    for (uint32_t i = 0; i &lt; n; ++i) Near(out[i], a[i] + b[i]);
+    Check(nl_add_relu_f32((float*)da.ptr, (float*)db.ptr, (float*)dc.ptr, n, stream), "AddReLU");
+    dc.Download(out.data());
+    for (uint32_t i = 0; i &lt; n; ++i) Near(out[i], std::max(a[i] + b[i], 0.0f));
+    DeviceBuffer scalar(sizeof(float));
+    Check(nl_reduce_sum_f32((float*)da.ptr, (float*)scalar.ptr, n, stream), "ReduceSum");
+    float sum = 0;
+    scalar.Download(&amp;sum);
+    double reference = 0;
+    for (float x : a) reference += x;
+    Near(sum, reference, 1e-4, 1e-5);
+    if (nl_add_f32((float*)da.ptr, (float*)db.ptr, (float*)da.ptr, n, stream) != NL_BAD_ARGUMENT)
+        throw std::runtime_error("output alias was not rejected");
+    std::cout &lt;&lt; "Add / AddReLU / ReduceSum passed, n=" &lt;&lt; n &lt;&lt; '\n';
+}
+static void TestMatmul(uint32_t m, uint32_t n, uint32_t k, aclrtStream stream) {
+    // Exact half encodings for {-1, 0, 1}; no SDK-specific host half type needed.
+    const uint16_t bits[] = {0xbc00, 0x0000, 0x3c00};
+    std::vector&lt;uint16_t&gt; a(m * k), b(k * n);
+    std::vector&lt;float&gt; af(m * k), bf(k * n), c(m * n);
+    for (uint32_t i = 0; i &lt; m; ++i)
+        for (uint32_t j = 0; j &lt; k; ++j) {
+            const uint32_t v = (i * 7 + j * 2 + i * j) % 3;
+            a[i * k + j] = bits[v]; af[i * k + j] = static_cast&lt;int&gt;(v) - 1;
+        }
+    for (uint32_t i = 0; i &lt; k; ++i)
+        for (uint32_t j = 0; j &lt; n; ++j) {
+            const uint32_t v = (i * 5 + j * 7 + i * j + 1) % 3;
+            b[i * n + j] = bits[v]; bf[i * n + j] = static_cast&lt;int&gt;(v) - 1;
+        }
+    DeviceBuffer da(a.size() * sizeof(uint16_t)), db(b.size() * sizeof(uint16_t));
+    DeviceBuffer dc(c.size() * sizeof(float));
+    da.Upload(a.data()); db.Upload(b.data());
+    Check(nl_matmul_f16_f32((uint16_t*)da.ptr, (uint16_t*)db.ptr, (float*)dc.ptr,
+                            m, n, k, stream), "MatMul");
+    dc.Download(c.data());
+    for (uint32_t i = 0; i &lt; m; ++i)
+        for (uint32_t j = 0; j &lt; n; ++j) {
+            double expected = 0;
+            for (uint32_t t = 0; t &lt; k; ++t) expected += af[i * k + t] * bf[t * n + j];
+            Near(c[i * n + j], expected);
+        }
+    if (nl_matmul_f16_f32((uint16_t*)da.ptr, (uint16_t*)db.ptr, (float*)dc.ptr,
+                          17, n, k, stream) != NL_UNSUPPORTED_SHAPE)
+        throw std::runtime_error("unsupported shape was not rejected");
+    std::cout &lt;&lt; "MatMul passed, " &lt;&lt; m &lt;&lt; 'x' &lt;&lt; k &lt;&lt; " @ " &lt;&lt; k &lt;&lt; 'x' &lt;&lt; n &lt;&lt; '\n';
+}
+int main(int argc, char** argv) {
+    try {
+        const int device = argc &gt; 1 ? std::stoi(argv[1]) : 0;
+        Session session(device); // this standalone application owns ACL lifecycle
+        std::cout &lt;&lt; nl_build_target() &lt;&lt; '\n';
+        if (nl_api_version() != 1) throw std::runtime_error("ABI mismatch");
+        Check(nl_add_f32(nullptr, nullptr, nullptr, 0, session.stream), "empty Add");
+        for (uint32_t n : {1u, 7u, 8u, 255u, 256u, 257u, 1000u, 2049u, 16384u})
+            TestVector(n, session.stream);
+        TestMatmul(16, 16, 16, session.stream);
+        TestMatmul(32, 48, 32, session.stream);
+        TestMatmul(64, 64, 64, session.stream);
+        std::cout &lt;&lt; "All device tests passed.\n";
+        return 0;
+    } catch (const std::exception&amp; e) {
+        std::cerr &lt;&lt; e.what() &lt;&lt; '\n';
+        return 1;
+    }
+}
+</code></pre></details><h3>普通 Python 工程：ctypes，不依赖 NumPy/PyTorch</h3><pre><code>export NL_LIB="$PWD/install/lib/libnpu_lab.so"
+export LD_LIBRARY_PATH="$PWD/install/lib:${LD_LIBRARY_PATH:-}"
+python3 examples/python_client.py 0</code></pre><details><summary>完整文件：examples/python_client.py · 138 行</summary><pre><code>#!/usr/bin/env python3
+"""Standalone ctypes consumer. Python stdlib only; requires built NPU library.
+
+NL_LIB=/absolute/path/to/libnpu_lab.so python3 examples/python_client.py 0
+No NumPy or PyTorch is required. This is NOT a PyTorch dispatcher/autograd op.
+"""
+import ctypes as C
+import math
+import os
+from pathlib import Path
+import struct
+import sys
+
+
+def main():
+    device = int(sys.argv[1]) if len(sys.argv) &gt; 1 else 0
+    acl_path = Path(os.environ["ASCEND_HOME_PATH"]) / "lib64/libascendcl.so"
+    lib_path = Path(os.environ["NL_LIB"]).resolve(strict=True)
+    acl = C.CDLL(str(acl_path), mode=C.RTLD_GLOBAL)
+    lab = C.CDLL(str(lib_path))
+    ptr, u32, i32, size = C.c_void_p, C.c_uint32, C.c_int32, C.c_size_t
+
+    def bind(lib, name, args, result=i32):
+        fn = getattr(lib, name)
+        fn.argtypes, fn.restype = args, result
+        return fn
+
+    init = bind(acl, "aclInit", [C.c_char_p])
+    finalize = bind(acl, "aclFinalize", [])
+    set_device = bind(acl, "aclrtSetDevice", [i32])
+    reset_device = bind(acl, "aclrtResetDevice", [i32])
+    create_stream = bind(acl, "aclrtCreateStream", [C.POINTER(ptr)])
+    destroy_stream = bind(acl, "aclrtDestroyStream", [ptr])
+    sync = bind(acl, "aclrtSynchronizeStream", [ptr])
+    malloc = bind(acl, "aclrtMalloc", [C.POINTER(ptr), size, i32])
+    free = bind(acl, "aclrtFree", [ptr])
+    memcpy = bind(acl, "aclrtMemcpy", [ptr, size, ptr, size, i32])
+    api = bind(lab, "nl_api_version", [], u32)
+    target = bind(lab, "nl_build_target", [], C.c_char_p)
+    add = bind(lab, "nl_add_f32", [ptr, ptr, ptr, u32, ptr])
+    relu = bind(lab, "nl_add_relu_f32", [ptr, ptr, ptr, u32, ptr])
+    reduce = bind(lab, "nl_reduce_sum_f32", [ptr, ptr, u32, ptr])
+    matmul = bind(lab, "nl_matmul_f16_f32", [ptr, ptr, ptr, u32, u32, u32, ptr])
+    # CANN ACL enum values used in this baseline.
+    HUGE_FIRST, H2D, D2H = 0, 1, 2
+
+    def check(code, where):
+        if code != 0:
+            raise RuntimeError(f"{where}: status={code}")
+
+    def near(actual, expected, atol=1e-4, rtol=1e-5):
+        if not (math.isfinite(actual) and math.isfinite(expected)):
+            raise AssertionError("unexpected non-finite result")
+        if abs(actual - expected) &gt; atol + rtol * abs(expected):
+            raise AssertionError(f"{actual} != {expected}")
+
+    allocations = []
+    stream = ptr()
+    initialized = selected = False
+
+    def alloc(nbytes):
+        p = ptr()
+        check(malloc(C.byref(p), nbytes, HUGE_FIRST), "malloc")
+        allocations.append(p)
+        return p
+
+    def upload(host):
+        nbytes = C.sizeof(host)
+        p = alloc(nbytes)
+        check(memcpy(p, nbytes, C.cast(host, ptr), nbytes, H2D), "H2D")
+        return p
+
+    def download(p, count):
+        out = (C.c_float * count)()
+        check(memcpy(C.cast(out, ptr), C.sizeof(out), p, C.sizeof(out), D2H), "D2H")
+        return list(out)
+
+    try:
+        if api() != 1:
+            raise RuntimeError("ABI version mismatch")
+        print(target().decode())
+        check(init(None), "aclInit"); initialized = True
+        check(set_device(device), "set device"); selected = True
+        check(create_stream(C.byref(stream)), "create stream")
+        check(add(None, None, None, 0, stream), "empty Add")
+        for n in (1, 7, 8, 255, 256, 257, 1000, 2049):
+            a = [((i % 17) - 8) * 0.25 for i in range(n)]
+            b = [((i % 11) - 5) * 0.5 for i in range(n)]
+            da = upload((C.c_float * n)(*a))
+            db = upload((C.c_float * n)(*b))
+            dc = alloc(n * C.sizeof(C.c_float))
+            check(add(da, db, dc, n, stream), "Add")
+            for got, x, y in zip(download(dc, n), a, b): near(got, x + y)
+            check(relu(da, db, dc, n, stream), "AddReLU")
+            for got, x, y in zip(download(dc, n), a, b): near(got, max(x + y, 0))
+            ds = alloc(C.sizeof(C.c_float))
+            check(reduce(da, ds, n, stream), "ReduceSum")
+            near(download(ds, 1)[0], math.fsum(a))
+            if add(da, db, da, n, stream) != -1:
+                raise AssertionError("alias should be rejected")
+            print(f"vector cases passed: n={n}")
+
+        m, n, k = 32, 48, 32
+        a = [float((i * 7 + j * 2 + i * j) % 3 - 1)
+             for i in range(m) for j in range(k)]
+        b = [float((i * 5 + j * 7 + i * j + 1) % 3 - 1)
+             for i in range(k) for j in range(n)]
+
+        def half_array(values):
+            # IEEE-754 half bit representation, not numeric uint16 conversion.
+            bits = [struct.unpack("=H", struct.pack("=e", v))[0] for v in values]
+            return (C.c_uint16 * len(bits))(*bits)
+
+        da, db = upload(half_array(a)), upload(half_array(b))
+        dc = alloc(m * n * C.sizeof(C.c_float))
+        check(matmul(da, db, dc, m, n, k, stream), "MatMul")
+        got = download(dc, m * n)
+        for i in range(m):
+            for j in range(n):
+                expected = math.fsum(a[i * k + t] * b[t * n + j] for t in range(k))
+                near(got[i * n + j], expected)
+        if matmul(da, db, dc, 17, n, k, stream) != -2:
+            raise AssertionError("unsupported matrix shape should be rejected")
+        print("MatMul passed; all ctypes device checks completed.")
+    finally:
+        # Only recycle allocations after stream completion has been established.
+        completed = not stream.value or sync(stream) == 0
+        if completed:
+            for p in reversed(allocations): free(p)
+        if stream.value: destroy_stream(stream)
+        # This standalone test owns the context. A host application must instead
+        # respect its own runtime lifecycle; the library never resets its device.
+        if selected: reset_device(device)
+        if initialized: finalize()
+
+
+if __name__ == "__main__":
+    main()
+</code></pre></details><p>两个消费端都包括初始化、设备选择、stream、内存分配、上传、四个算子调用、下载校验与清理。对于已有服务，应该复用服务自己的 context/stream，不要每次调用都照抄测试程序的初始化和 ResetDevice。</p><h3>直接共享库，与标准 OPP/ACLNN 框架不是一回事</h3><table><thead><tr><th>路线</th><th>本次交付</th><th>额外工作</th></tr></thead><tbody><tr><td>自定义 C ABI .so</td><td>完整源码、构建安装与C++/Python消费者</td><td>在所选目标环境编译和验证。</td></tr><tr><td>OPP / ACLNN 包</td><td>只说明区别，不伪造生成产物</td><td>OpDef、推导、注册回调、序列化Tiling、算子元数据与包构建；再使用包实际生成的 GetWorkspaceSize/执行接口。</td></tr><tr><td>PyTorch / torch_npu</td><td>ctypes 脚本不属于此路线</td><td>dispatcher/binding、Tensor契约、当前stream、设备守卫及需要时的Autograd/编译适配。</td></tr></tbody></table><p>这里的同步 C ABI 不支持图捕获，亦不自动提供梯度。不能把 ctypes 接口接收普通 Host 数组的习惯，误用到这里要求设备地址的参数上。</p></section><section id="npu-source-tests"><h2>22. 验证状态、全部测试源码与工程说明</h2><table><thead><tr><th>检查层级</th><th>当前状态</th></tr></thead><tbody><tr><td>Python 包结构、语法、任务切分与矩阵索引模型</td><td>已在本机运行；属于 CPU 模型检查，不执行 NPU 代码。</td></tr><tr><td>实际 Host Tiling 的 C++ 测试</td><td>提供完整测试源文件；本机未编译。</td></tr><tr><td>ASC / 目标链接与安装</td><td>本机无 CANN 编译器，未执行。</td></tr><tr><td>NPU 数值、布局、同步与性能</td><td>本机无目标设备，未执行；C++/Python 消费端是待上机的验收程序。</td></tr></tbody></table><pre><code># 无 SDK 时可执行的检查
+python3 tests/check_package.py
+
+# 有普通 C++17 编译器时，直接测试真实 Host Tiling 头文件
+c++ -std=c++17 -Isrc/host tests/tiling_test.cpp -o tiling_test
+./tiling_test</code></pre><details><summary>完整文件：tests/tiling_test.cpp · 35 行</summary><pre><code>#include "tiling.h"
+#include &lt;algorithm&gt;
+#include &lt;cstdint&gt;
+#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+
+static void Require(bool condition) {
+    if (!condition) throw std::runtime_error("tiling invariant failed");
+}
+int main() {
+    for (uint32_t n = 1; n &lt;= 10000; ++n) {
+        const auto p = nl::MakeVectorPlan(n);
+        Require(p.blocks &gt; 0 &amp;&amp; p.blocks &lt;= nl::kMaxBlocks);
+        uint32_t next = 0;
+        for (uint32_t b = 0; b &lt; p.blocks; ++b) {
+            const uint32_t first = nl::FirstTile(p, b);
+            const uint32_t last = nl::LastTile(p, b);
+            Require(first == next &amp;&amp; first &lt; last);
+            for (uint32_t t = first; t &lt; last; ++t) {
+                const uint32_t offset = t * nl::kTile;
+                const uint32_t valid = std::min(nl::kTile, n - offset);
+                Require(offset &lt; n &amp;&amp; valid &gt; 0 &amp;&amp; offset + valid &lt;= n);
+            }
+            next = last;
+        }
+        Require(next == p.tiles);
+    }
+    const auto max = nl::MakeVectorPlan(nl::kMaxLength);
+    Require(nl::LastTile(max, max.blocks - 1) == max.tiles);
+    Require(nl::MakeVectorPlan(0).blocks == 0);
+    Require(nl::ValidMatrix(32, 48, 64));
+    Require(!nl::ValidMatrix(17, 48, 64));
+    Require(!nl::ValidMatrix(16, 16, 0));
+    std::cout &lt;&lt; "Host tiling tests passed (no NPU execution).\n";
+}
+</code></pre></details><details><summary>完整文件：tests/check_package.py · 95 行</summary><pre><code>#!/usr/bin/env python3
+"""CPU-only package checks. These do not compile ASC or validate NPU execution."""
+import ast
+from pathlib import Path
+import random
+import re
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def plan(n):
+    tiles = (n + 255) // 256
+    return tiles, min(8, tiles)
+
+
+class PackageTests(unittest.TestCase):
+    def test_python_consumer_parses(self):
+        ast.parse((ROOT / "examples/python_client.py").read_text(encoding="utf-8"))
+
+    def test_contract_constants(self):
+        text = (ROOT / "src/host/tiling.h").read_text(encoding="utf-8")
+        self.assertRegex(text, r"kTile\s*=\s*256;")
+        self.assertRegex(text, r"kMaxBlocks\s*=\s*8;")
+        self.assertRegex(text, r"kPartialStride\s*=\s*8;")
+        self.assertRegex(text, r"kMaxMatrixDim\s*=\s*256;")
+
+    def test_vector_coverage(self):
+        for n in list(range(1, 10001)) + [2**24]:
+            tiles, blocks = plan(n)
+            previous = 0
+            covered = 0
+            for b in range(blocks):
+                first, last = tiles * b // blocks, tiles * (b + 1) // blocks
+                self.assertEqual(first, previous)
+                self.assertLess(first, last)
+                begin, end = first * 256, min(last * 256, n)
+                self.assertLess(begin, end)
+                covered += end - begin
+                previous = last
+            self.assertEqual(previous, tiles)
+            self.assertEqual(covered, n)
+
+    def test_two_stage_reduce_model(self):
+        rng = random.Random(71)
+        for n in [1, 7, 255, 256, 257, 1000, 2049, 16384]:
+            x = [rng.randrange(-8, 9) for _ in range(n)]
+            tiles, blocks = plan(n)
+            scratch = [None] * (blocks * 8)
+            for b in range(blocks):
+                first, last = tiles * b // blocks, tiles * (b + 1) // blocks
+                value = sum(x[first * 256:min(n, last * 256)])
+                scratch[b * 8:(b + 1) * 8] = [value] + [0] * 7
+            self.assertEqual(sum(scratch), sum(x))
+
+    def test_matrix_index_and_accumulation_model(self):
+        # Tests ND tile offsets and complete coverage, NOT Cube physical layouts.
+        m, n, k = 32, 48, 32
+        rng = random.Random(72)
+        a = [[rng.randrange(-2, 3) for _ in range(k)] for _ in range(m)]
+        b = [[rng.randrange(-2, 3) for _ in range(n)] for _ in range(k)]
+        actual = [[None] * n for _ in range(m)]
+        tiles = (m // 16) * (n // 16)
+        for core in range(min(8, tiles)):
+            for tile in range(core, tiles, min(8, tiles)):
+                row, col = (tile // (n // 16)) * 16, (tile % (n // 16)) * 16
+                for i in range(16):
+                    for j in range(16):
+                        self.assertIsNone(actual[row + i][col + j])
+                        acc = 0
+                        for k0 in range(0, k, 16):
+                            acc += sum(a[row + i][k0 + t] * b[k0 + t][col + j]
+                                       for t in range(16))
+                        actual[row + i][col + j] = acc
+        expected = [[sum(a[i][t] * b[t][j] for t in range(k))
+                     for j in range(n)] for i in range(m)]
+        self.assertEqual(actual, expected)
+
+    def test_launchers_have_implementations(self):
+        header = (ROOT / "src/kernel/launchers.h").read_text(encoding="utf-8")
+        source = "\n".join(p.read_text(encoding="utf-8")
+                           for p in (ROOT / "src/kernel").glob("*.asc"))
+        for name in re.findall(r"void (nl_launch_\w+)\(", header):
+            self.assertIn('extern "C" void ' + name + '(', source)
+
+    def test_device_sources_have_no_stub_markers(self):
+        for path in (ROOT / "src").rglob("*"):
+            if path.suffix not in {".asc", ".cpp", ".h"}: continue
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn("TODO", text, str(path))
+            self.assertNotIn("IMPLEMENT_ME", text, str(path))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
+</code></pre></details><p>客户端覆盖单元素、非块对齐、不同长度、非方阵与K循环，并拒绝非法矩阵形状和输出别名。当前用例不是所有浮点边界的穷举验证，特殊值、极端动态范围与长序列误差还应按业务契约补充。</p><details><summary>完整文件：README.md · 167 行</summary><pre><code># NPU Operator Lab — 完整源码教学工程
+
+四个案例：Add、Add+ReLU、两阶段 ReduceSum、Cube MatMul。
+它们共享一套可安装的 C ABI 动态库，提供独立 C++ 和 Python ctypes 消费端。
+
+## 0. 验证边界与选定基线
+
+- 教学目标：Linux，Atlas A2/A3 对应 `dav-2201`，CANN &gt;= 9.0.0 的新 ASC 构建模式。
+- 构建依赖：匹配设备的驱动/固件、CANN 开发包、C++17 编译环境、CMake &gt;= 3.20；`find_package(ASC REQUIRED)` 必须可用。
+- 选这个基线来自已查阅的 ASC-DevKit 动态库示例支持表，不是用户确认的实际设备。
+- **本机没有 CANN 编译器或 NPU。源码已提供，不代表已成功编译或上机通过。**
+- CPU 检查只覆盖包结构、切分与索引数学、Python 语法；不覆盖 ASC 编译、物理布局、同步和设备数值。
+- 不承诺旧版 CANN 8.x、950 架构、任意布局或任意矩阵形状的兼容性。
+
+## 1. 目录与每一块的作用
+
+```text
+npu-operator-lab/
+  CMakeLists.txt                  编译共享库并生成可安装 CMake package
+  cmake/NpuLabConfig.cmake.in      让外部工程 find_package(NpuLab)
+  include/npu_lab.h               对外稳定 C ABI、类型与所有权契约
+  src/host/tiling.h               长度/形状约束，任务数与块大小
+  src/host/npu_ops.cpp            参数检查、Tiling、启动、同步、工作区生命周期
+  src/kernel/launchers.h          Host C++ 与 ASC 启动封装之间的内部接口
+  src/kernel/elementwise_impl.h   Add/融合共用的 CopyIn → Compute → CopyOut
+  src/kernel/add.asc             Add 设备入口与 &lt;&lt;&lt;&gt;&gt;&gt; Host 启动函数
+  src/kernel/add_relu.asc         融合入口；中间和不离开 UB
+  src/kernel/reduce_sum.asc       局部和及最终合并两个 Kernel
+  src/kernel/matmul.asc           GM/L1/L0 布局、Mmad、K 累加与 Fixpipe
+  examples/cpp_client/            不依赖源码目录的独立 C++ 应用
+  examples/python_client.py       ctypes 调用全部四个公开 API
+  tests/tiling_test.cpp           实际 Host Tiling 代码的普通 C++ 测试
+  tests/check_package.py          无 SDK 可执行的 Python 模型与结构检查
+  NOTICE.md                      来源、改写范围和版本说明
+```
+
+调用链：
+
+```text
+外部 C++ / Python 应用
+    -&gt; include/npu_lab.h 的 nl_* 接口
+    -&gt; libnpu_lab.so 中的参数检查与 Host Tiling
+    -&gt; .asc 文件中的 Host &lt;&lt;&lt;&gt;&gt;&gt; 启动函数
+    -&gt; NPU 上的 __vector__ / __cube__ Kernel
+    -&gt; stream 同步完成
+    -&gt; 返回状态，应用读取/继续使用设备输出
+```
+
+`npu_ops.cpp` 是本工程自己的 Host 包装，不是 OPP 的 OpDef 注册回调。
+本路线不生成 `aclnnXxx`，也不会仅靠安装 `.so` 自动出现在 PyTorch 算子列表中。
+
+## 2. 算子契约
+
+| 算子 | 输入与输出 | 范围 | 实现 |
+|---|---|---|---|
+| Add | FP32 + FP32 -&gt; FP32 | 连续等长；无广播；0 &lt;= N &lt;= 2^24 | Vector，256 元素/块，DataCopyPad 尾块 |
+| Add+ReLU | FP32 + FP32 -&gt; FP32 | 同 Add；有限数值测试 | Add 后在 UB 中 Maxs(0) |
+| ReduceSum | FP32[N] -&gt; FP32[1] | 1 &lt;= N &lt;= 2^24 | 每任务一个带零填充的32字节局部和槽，再启动合并 Kernel |
+| MatMul | FP16[M,K] @ FP16[K,N] -&gt; FP32[M,N] | M,N,K 是16的正倍数且各 &lt;=256 | 每输出块16x16，显式布局、Cube Mmad、K循环 |
+
+全部 API 接收当前 context 的设备指针及非空 stream；输入/输出不得重叠。
+输入 A 与 B 可以复用相同地址，但输出不得覆盖它们。
+设备内存是否足够、指针是否来自正确设备及 context，由调用者保证。
+MatMul 的 `uint16_t*` 是 IEEE FP16 位模式，不是整数矩阵，也不是 float32 地址。
+
+## 3. 构建与安装（在目标 Linux NPU 机器执行）
+
+先按实际安装路径加载环境，例如：
+
+```bash
+source /usr/local/Ascend/cann/set_env.sh
+# 安装位置不同则使用实际路径；不要混用其他版本的头文件/运行库。
+printf '%s\n' "$ASCEND_HOME_PATH"
+command -v bisheng
+cmake --version
+npu-smi info
+
+cmake -S . -B build \
+  -DCMAKE_ASC_ARCHITECTURES=dav-2201 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$PWD/install"
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+cmake --install build
+```
+
+这些是待执行步骤，不是本地已经通过的日志。无需 root 或写入系统目录。
+产物应包括：
+
+```text
+install/include/npu_lab.h
+install/lib/libnpu_lab.so         指向对应 SONAME 的共享库链接
+install/lib/libnpu_lab.so.1*
+install/lib/cmake/NpuLab/NpuLabConfig.cmake
+install/lib/cmake/NpuLab/NpuLabTargets.cmake
+```
+
+## 4. 其他 C++ 工程怎样应用
+
+`examples/cpp_client` 有自己的 CMakeLists，不引用算子的 `src/`：
+
+```bash
+cmake -S examples/cpp_client -B client-build \
+  -DCMAKE_PREFIX_PATH="$PWD/install"
+cmake --build client-build --parallel
+export LD_LIBRARY_PATH="$PWD/install/lib:${LD_LIBRARY_PATH:-}"
+./client-build/npu_lab_client 0
+```
+
+消费端只需要：安装后的头文件与共享库、CMake package、兼容的 ACL 运行环境，以及驱动设备。
+生产端编译 `.asc` 需要 ASC 编译器；链接预编译库的 C++ 消费端无需再次编译 Kernel。
+外部工程自行 `aclInit -&gt; SetDevice -&gt; CreateStream -&gt; Malloc/上传`，调用 `nl_*`，再读取结果及释放资源。
+不要把测试程序的 `aclFinalize/ResetDevice` 原样塞进已有服务的一次请求中；它们属于进程/设备生命周期。
+
+## 5. Python 应用方式
+
+```bash
+export NL_LIB="$PWD/install/lib/libnpu_lab.so"
+export LD_LIBRARY_PATH="$PWD/install/lib:${LD_LIBRARY_PATH:-}"
+python3 examples/python_client.py 0
+```
+
+脚本只用 Python 标准库：ctypes 加载 ACL 和本库、分配设备内存、上传数据、调用算子、下载校验。
+它是普通 Python 的 FFI 调用，不是 PyTorch Tensor 接口，不提供自动求导、torch.compile 或图捕获支持。
+
+## 6. 同步、资源与错误
+
+- `nl_*` 为易理解而设计成同步 API，会等待传入 stream 的工作完成，可能同时等待该 stream 之前提交的工作。
+- 借用调用者 stream/context，库内部不 `aclInit/aclFinalize/ResetDevice`。
+- Add/融合/MatMul 不分配外部工作区；ReduceSum 分配工作区，在两阶段都完成后释放。
+- ReduceSum 若同步失败，无法证明设备不再访问工作区，因此不立即回收该小块内存。应视为设备执行故障，按宿主工程策略停止任务并恢复/重建 context，而不是无限重试。
+- 返回0表示正常同步完成，负数表示本库检查失败，正数是 ACL 状态。设备内存/stream 的合法性仍是调用契约。
+- C++ 测试为独立进程，错误时退出；长期运行服务要根据 SDK 故障语义设计更完整恢复策略。
+- 队列深度为1，MatMul 使用保守同步；这里不把“源码完整”包装成“性能最优”。
+
+## 7. 为什么不是 OPP/ACLNN 包
+
+这是完整的 **直接 Kernel 调用 + 自定义共享库** 路线，适合看清每层责任与跨工程链接。
+若要标准框架集成，需要另一套构建/注册流程：
+
+1. OpDef 描述输入、输出、dtype、format、属性与支持产品。
+2. Shape/dtype 推导与 Host Tiling 回调，序列化设备侧读取的 Tiling 数据。
+3. Kernel、算子元数据、编译配置与包生成。
+4. 安装 OPP 包及生成的 ACLNN 头文件/库，配置算子查找路径。
+5. C++ 通过该包实际生成的 `aclnnXxxGetWorkspaceSize` / `aclnnXxx` 调用。
+6. PyTorch 还需要匹配 torch_npu 的 dispatcher/binding、stream/context 处理和需要时的 Autograd 注册。
+
+这些产物依赖具体 SDK；本工程没有伪造 `aclnnNlAdd` 等生成文件。
+只有确认你的实际版本与集成框架后，才适合补充可验证的 OPP 路线。
+
+## 8. 验证层级
+
+任何电脑可执行：
+
+```bash
+python3 tests/check_package.py
+```
+
+有普通 C++17 编译器但无 NPU，也可测试实际 Host 切分代码：
+
+```bash
+c++ -std=c++17 -Isrc/host tests/tiling_test.cpp -o tiling_test
+./tiling_test
+```
+
+有目标设备后执行 C++ 和 Python 客户端。它们包含尾块、单元素、不同长度、矩阵布局与K累加校验、拒绝非法形状/别名的测试。
+性能数据必须在数值通过之后测量；本包没有真实设备 benchmark 报告。
+</code></pre></details><details><summary>完整文件：NOTICE.md · 25 行</summary><pre><code># 来源与实现说明
+
+此工程为本次讨论新编写的教学实现。它使用 Ascend C API，未打包 SDK、编译器或厂商二进制。
+使用 SDK 需遵守相应 SDK 许可。本包不宣称经过厂商认证或设备验证。
+
+实际查阅的源码基线：ASC-DevKit 的 GitHub 镜像 `mirror-cann/asc-devkit`，
+固定树/提交引用 `82b89a15f26329511fc7fbc807d5132a1f9b4ba7`。
+这是 GitHub 镜像入口，不能混称为本次从 GitCode 官网直接下载的发行版。
+
+- 动态库与 CANN 基线支持表：
+  https://github.com/mirror-cann/asc-devkit/blob/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/02_features/04_compile/02_dynamic_library_compile/README.md
+- ASC 动态库 CMake：
+  https://github.com/mirror-cann/asc-devkit/blob/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/02_features/04_compile/02_dynamic_library_compile/CMakeLists.txt
+- TPipe/TQue Add API 用法：
+  https://github.com/mirror-cann/asc-devkit/blob/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/00_introduction/01_add/add_tpipe_tque/add_tpipe_tque.asc
+- ReduceSum 接口声明：
+  https://github.com/mirror-cann/asc-devkit/blob/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/include/basic_api/kernel_operator_vec_reduce_intf.h
+- DataCopyPad 接口声明：
+  https://github.com/mirror-cann/asc-devkit/blob/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/include/basic_api/kernel_operator_data_copy_intf.h
+- Cube 数据路径、Mmad 与 Fixpipe 参考：
+  https://github.com/mirror-cann/asc-devkit/blob/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/03_basic_api/03_matrix_compute/mmad/mmad.asc
+
+工程自行实现的部分：公开 C ABI、参数与别名检查、分块策略、动态长度尾块、
+融合案例、两阶段 ReduceSum、按16分块的矩阵遍历、打包导出、C++/Python消费端和测试。
+接口存在及参考样例可阅读，不等于本工程的具体组合已经通过目标版本编译与执行。
+</code></pre></details><p><strong>源码与文档维护：</strong>本章组由 <code>scripts/build_npu_lab.py</code> 从对应工程文件生成。修改源码后重新生成、校验并发布；脚本仅维护 npu-source-* 章节，保留前面的原理内容和历史版本。</p></section><section id="open-questions"><h2>待验证与后续问题</h2><ul><li>用户尚未指定 NPU 型号和 CANN 版本；精确存储拓扑、容量、对齐、尾块 API 与混合执行方式待确认。</li><li>源码版先采用直接 Kernel 调用 + C ABI 共享库路线；若需要 OPP/ACLNN 或 PyTorch 注册，需确认实际框架与 SDK 后另做对应适配。</li><li>本文分块、带宽与流水线均为教学模型；最优配置及性能收益必须在目标设备测量。</li></ul></section><section id="references"><h2>参考来源</h2><ul><li><a href="https://raw.githubusercontent.com/Ascend/samples/fc2aea93e48be8f8cee51d0c6c1b13a08155f83a/cplusplus/level1_single_api/4_op_dev/6_ascendc_custom_op/kernel_invocation/Add/add_custom.cpp" rel="noreferrer noopener">Ascend 官方样例：Add Kernel（三阶段、队列与双缓冲；固定提交，历史 API）</a></li><li><a href="https://raw.githubusercontent.com/Ascend/samples/fc2aea93e48be8f8cee51d0c6c1b13a08155f83a/cplusplus/level1_single_api/4_op_dev/6_ascendc_custom_op/acl_invocation/op_dev/op_host/add_custom.cpp" rel="noreferrer noopener">Ascend 官方样例：Add Host（形状、类型、Tiling 与启动配置；固定提交）</a></li><li><a href="https://raw.githubusercontent.com/Ascend/samples/fc2aea93e48be8f8cee51d0c6c1b13a08155f83a/cplusplus/level1_single_api/4_op_dev/6_ascendc_custom_op/kernel_invocation/MatMul/matmul_custom.cpp" rel="noreferrer noopener">Ascend 官方样例：MatMul（布局转换、LoadData、Mmad；固定提交，历史 API）</a></li><li><a href="https://raw.githubusercontent.com/Ascend/samples/fc2aea93e48be8f8cee51d0c6c1b13a08155f83a/cplusplus/level1_single_api/4_op_dev/6_ascendc_custom_op/kernel_invocation/readme.md" rel="noreferrer noopener">Ascend 官方样例 README（演示范围、历史环境与性能剖析示例；固定提交）</a></li><li><a href="https://raw.githubusercontent.com/mirror-cann/asc-devkit/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/02_features/04_compile/02_dynamic_library_compile/README.md" rel="noreferrer noopener">ASC-DevKit 镜像固定引用：动态库支持产品与 CANN 9.0 起的构建路线</a></li><li><a href="https://raw.githubusercontent.com/mirror-cann/asc-devkit/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/02_features/04_compile/02_dynamic_library_compile/CMakeLists.txt" rel="noreferrer noopener">ASC-DevKit 镜像固定引用：ASC 动态库 CMake</a></li><li><a href="https://raw.githubusercontent.com/mirror-cann/asc-devkit/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/00_introduction/01_add/add_tpipe_tque/add_tpipe_tque.asc" rel="noreferrer noopener">ASC-DevKit 镜像固定引用：TPipe/TQue Add 示例</a></li><li><a href="https://raw.githubusercontent.com/mirror-cann/asc-devkit/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/include/basic_api/kernel_operator_vec_reduce_intf.h" rel="noreferrer noopener">ASC-DevKit 镜像固定引用：ReduceSum 接口声明</a></li><li><a href="https://raw.githubusercontent.com/mirror-cann/asc-devkit/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/include/basic_api/kernel_operator_data_copy_intf.h" rel="noreferrer noopener">ASC-DevKit 镜像固定引用：DataCopyPad 接口声明</a></li><li><a href="https://raw.githubusercontent.com/mirror-cann/asc-devkit/82b89a15f26329511fc7fbc807d5132a1f9b4ba7/examples/01_simd_cpp_api/03_basic_api/03_matrix_compute/mmad/mmad.asc" rel="noreferrer noopener">ASC-DevKit 镜像固定引用：Mmad 与 Fixpipe 路径示例</a></li></ul></section><section id="revision-history" class="history"><h2>修订记录</h2><ol reversed><li><a href="../history/npu-architecture-operator-development/v0002/index.html">v2</a> · 2026-11-05 12:29:42 UTC — 新增源码实战：18份完整工程文件、四个算子实现、Add全链路框架、共享库安装与独立C++/Python接入；CPU模型检查通过，SDK编译和NPU验证待完成</li><li><a href="../history/npu-architecture-operator-development/v0001/index.html">v1</a> · 2026-11-05 11:59:22 UTC — 新建独立图文教程：NPU结构、存储与搬运、分块同步，以及Add到MatMul的算子开发路线；区分教学模型与历史官方样例</li></ol></section></article></div></main>
+<footer class="footer">由讨论沉淀，而非逐字记录。保留依据、边界与尚未解决的问题。所有页面可离线阅读；浏览器打印可另存为 PDF。</footer>
+</div></body>
+</html>

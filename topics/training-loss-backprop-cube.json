@@ -1,0 +1,41 @@
+{
+  "slug": "training-loss-backprop-cube",
+  "title": "Loss、反向传播与优化器：大模型怎样学习",
+  "summary": "从最大似然理解交叉熵，推导 softmax 与交叉熵组合后的 pᵢ−qᵢ 梯度，再通过链式法则说明每层权重如何获得梯度，以及优化器如何更新参数。本页只讨论训练数学；Cube 与 Vector 已独立归档。",
+  "tags": ["大模型训练", "交叉熵", "反向传播", "优化器"],
+  "status": "已沉淀",
+  "sections": [
+    {
+      "id": "overview",
+      "title": "1. 先看全景：训练到底在做什么",
+      "html": "<p>本页以自回归语言模型、one-hot 监督及普通反向传播为背景，只讨论训练目标与参数更新，不展开硬件实现。</p><blockquote><strong>损失定义怎样算好；反向传播计算参数如何影响好坏；优化器决定具体怎么改。</strong></blockquote><pre>输入 token\n    ↓\n模型前向计算 → logits → 概率 → loss\n    ↑                              │\n    │                              ↓\n下一轮计算 ← 更新参数 ← 优化器 ← 反向传播得到梯度</pre><p>不同任务不一定使用不同损失：翻译和代码生成都可以使用交叉熵，区别还来自训练数据与监督信号。因此，训练目标由<strong>数据、监督信号和损失函数共同确定</strong>。</p><details><summary>归档范围调整</summary><p>初版曾将训练数学与 Cube 硬件讨论合并。按用户要求，两者现已独立维护。为保持已有地址和版本历史，本页沿用原文件名，但最新正文只包含训练数学。硬件主题请从目录页打开《Cube 与 Vector：矩阵计算、数据复用与乘加阵列》，文件为 <code>D:/workspace/dialogue-html/pages/cube-vector-matrix-compute.html</code>。原合并版仍保留在本页历史版本中。</p></details>"
+    },
+    {
+      "id": "cross-entropy",
+      "title": "2. 交叉熵为什么是正确答案概率的负对数",
+      "html": "<p>预训练把文本变成预测下一个 token 的任务。模型对词表中的每个候选输出一个分数 z<sub>i</sub>，称为 logit，再通过 softmax 得到概率：</p><p><strong>p<sub>i</sub> = exp(z<sub>i</sub>) / Σ<sub>j</sub> exp(z<sub>j</sub>)</strong></p><p>目标分布记为 q。若正确答案是第一个词，通常 q = [1, 0, 0, …]，即 one-hot 分布。交叉熵为：</p><p><strong>L = −Σ<sub>i</sub> q<sub>i</sub> log p<sub>i</sub> = −log p<sub>y</sub></strong></p><table><thead><tr><th>正确答案概率</th><th>损失（自然对数）</th></tr></thead><tbody><tr><td>0.9</td><td>0.105</td></tr><tr><td>0.6</td><td>0.511</td></tr><tr><td>0.1</td><td>2.303</td></tr><tr><td>0.01</td><td>4.605</td></tr></tbody></table><p>其依据是<strong>最大似然估计</strong>。文本序列的概率可分解为各位置条件概率的乘积；取对数后，乘积成为求和；加负号，把最大化转成最小化：</p><p>P<sub>θ</sub>(x<sub>1</sub>, …, x<sub>T</sub>) = ∏<sub>t</sub> P<sub>θ</sub>(x<sub>t</sub> | x<sub>&lt;t</sub>)</p><p><strong>L(θ) = −(1/T) Σ<sub>t</sub> log P<sub>θ</sub>(x<sub>t</sub> | x<sub>&lt;t</sub>)</strong></p><p>实际常对参与监督的有效 token 求平均，忽略 padding 或被屏蔽的位置。上述是常见预训练／监督微调目标；偏好优化等后训练阶段可以采用其他目标。</p>"
+    },
+    {
+      "id": "softmax-gradient",
+      "title": "3. 为什么对 logit 求导，得到 pᵢ − qᵢ",
+      "html": "<p>对 z<sub>i</sub> 求导，是为了知道<strong>这个输出分数提高一点，最终损失如何变化</strong>。这是继续求模型参数梯度的中间步骤，不是最终更新对象。</p><h3>先把 softmax 代入损失</h3><p>log p<sub>j</sub> = z<sub>j</sub> − log(Σ<sub>k</sub> exp(z<sub>k</sub>))</p><p>利用 Σ<sub>j</sub> q<sub>j</sub> = 1，可化简为：</p><p><strong>L = −Σ<sub>j</sub> q<sub>j</sub>z<sub>j</sub> + log(Σ<sub>k</sub> exp(z<sub>k</sub>))</strong></p><h3>分别求两项的导数</h3><table><thead><tr><th>项</th><th>对 zᵢ 的偏导</th><th>原因</th></tr></thead><tbody><tr><td>−Σⱼ qⱼzⱼ</td><td>−qᵢ</td><td>只有第 i 项含有 zᵢ，目标 q 固定</td></tr><tr><td>log(Σₖ exp(zₖ))</td><td>exp(zᵢ) / Σₖ exp(zₖ) = pᵢ</td><td>应用 log 的求导法则和链式法则</td></tr></tbody></table><p>相加得到：<strong>∂L/∂z<sub>i</sub> = p<sub>i</sub> − q<sub>i</sub></strong>。</p><p>例如 p = [0.6, 0.3, 0.1]，q = [1, 0, 0]，输出端梯度就是 [−0.4, 0.3, 0.1]。如果直接对 logits 做梯度下降，会提高正确词的分数，降低其他词的分数。实际训练则通过这些梯度更新模型权重。</p><h3>目标是 one-hot，为什么错误词也有梯度？</h3><p>即使 L = −log p<sub>1</sub>，p<sub>1</sub> 的分母仍包含所有 logits：</p><p>L = −z<sub>1</sub> + log(exp(z<sub>1</sub>) + exp(z<sub>2</sub>) + exp(z<sub>3</sub>))</p><p>提高错误词分数，会增大分母、降低正确词概率，因而提高 loss。<strong>q<sub>i</sub> = 0 不代表该输出没有梯度。</strong>以上公式按单个监督位置书写；平均损失还会带来相应的缩放系数。</p>"
+    },
+    {
+      "id": "parameters-chain-rule",
+      "title": "4. θ 是什么，为什么参数梯度里还有求和",
+      "html": "<p><strong>θ 通常统指所有可训练参数，θ<sub>j</sub> 表示其中一个标量参数。</strong>例如简单模型 ŷ = wx + b 中，θ = {w, b}。大模型中包括 Embedding、注意力投影矩阵、MLP 权重、归一化参数、输出层权重，以及架构中存在的偏置。</p><p>每个权重矩阵里的每一个数，都是一个参数。输入 token、中间激活 h 和 logits z 通常是数据或计算结果，不是被优化器直接保存和更新的权重。</p><p>同一个参数可能影响多个 logits，所以必须汇总所有路径的贡献：</p><p><strong>∂L/∂θ<sub>j</sub> = Σ<sub>i</sub> (p<sub>i</sub> − q<sub>i</sub>) · ∂z<sub>i</sub>/∂θ<sub>j</sub></strong></p><ul><li>i：输出／词表位置的编号；求和完成后它消失。</li><li>j：参数的编号；每个参数最终得到自己的梯度。</li><li>不是直接把所有 p<sub>i</sub> − q<sub>i</sub> 相加，而是先乘以该参数对对应输出的影响。</li></ul><blockquote><strong>链式法则：沿路径相乘，多条路径汇合时相加。</strong>不会把所有参数的梯度加成一个数。</blockquote>"
+    },
+    {
+      "id": "layerwise-backprop",
+      "title": "5. 第一层也对最终 loss 求导，但要逐层反传",
+      "html": "<p>用只有三个标量权重的简化网络说明：</p><pre>x --[ × w1 ]--&gt; h1 --[ × w2 ]--&gt; h2 --[ × w3 ]--&gt; y_hat</pre><p>h<sub>1</sub> = w<sub>1</sub>x；h<sub>2</sub> = w<sub>2</sub>h<sub>1</sub>；ŷ = w<sub>3</sub>h<sub>2</sub>；L = ½(ŷ − y)<sup>2</sup>。</p><table><thead><tr><th>位置</th><th>传入梯度</th><th>本层权重梯度</th><th>继续向前传递</th></tr></thead><tbody><tr><td>第三层</td><td>g₃ = ŷ − y</td><td>∂L/∂w₃ = g₃h₂</td><td>g₂ = g₃w₃</td></tr><tr><td>第二层</td><td>g₂</td><td>∂L/∂w₂ = g₂h₁</td><td>g₁ = g₂w₂</td></tr><tr><td>第一层</td><td>g₁</td><td>∂L/∂w₁ = g₁x</td><td>若需要，继续求输入梯度</td></tr></tbody></table><p>展开第一层梯度：</p><p><strong>∂L/∂w<sub>1</sub> = (ŷ − y) · w<sub>3</sub> · w<sub>2</sub> · x</strong></p><p>所以数学上确实是“最终 loss 对第一层权重求导”；计算上则复用后面各层已经算出的梯度，逐层向前传播。真实网络还包含激活函数、注意力、残差分支等，其局部导数会加入这条链。</p><p><strong>通常一次反向传播算完各层梯度后，优化器才更新参数。</strong>不是先更新最后一层，再使用更新后的权重计算第一层梯度。</p>"
+    },
+    {
+      "id": "optimizer",
+      "title": "6. 优化器接手：梯度怎样变成参数更新",
+      "html": "<p>反向传播只负责求出梯度 g<sub>t</sub> = ∂L/∂θ，优化器负责使用它。</p><h3>SGD：沿负梯度方向迈一步</h3><p><strong>θ<sub>t+1</sub> = θ<sub>t</sub> − ηg<sub>t</sub></strong></p><p>η 是学习率。例如参数为 0.8，梯度为 0.2，学习率为 0.01，则更新后为 0.798。</p><h3>AdamW：还使用梯度的历史状态</h3><p>它维护一阶矩 m 和二阶矩 v：</p><p>m<sub>t</sub> = β<sub>1</sub>m<sub>t−1</sub> + (1−β<sub>1</sub>)g<sub>t</sub></p><p>v<sub>t</sub> = β<sub>2</sub>v<sub>t−1</sub> + (1−β<sub>2</sub>)g<sub>t</sub><sup>2</sup></p><p>再结合偏差修正、开方、除法、学习率及解耦权重衰减等完成逐元素更新。这里是机制摘要，不是完整实现公式。</p><pre>optimizer.zero_grad()\nlogits = model(inputs)\nloss = loss_fn(logits, targets)\n\nloss.backward()    # 计算梯度，写入参数的 .grad\noptimizer.step()   # 根据梯度和优化器状态更新参数</pre><p>梯度不是应用到 loss 数值上，而是用于修改参数，让后续计算的 loss 倾向于更低。<strong>不保证每一步、每个批次的 loss 都下降。</strong></p>"
+    }
+  ],
+  "openQuestions": [],
+  "references": []
+}
